@@ -1,0 +1,114 @@
+[
+  {
+    "name": "/lesson command shows lesson 1 of 4 with Next button",
+    "steps": [
+      {
+        "send": { "text": "/lesson" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📖 Lesson 1 of 4\n\nPractice daily to improve quickly.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Next →", "callback_data": "lesson:next:1" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Next button from lesson 1 navigates to lesson 2 with both buttons",
+    "steps": [
+      {
+        "send": { "callback": "lesson:next:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📖 Lesson 2 of 4\n\nSmall steps lead to mastery.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "← Prev", "callback_data": "lesson:prev:0" },
+                    { "text": "Next →", "callback_data": "lesson:next:2" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Prev button from lesson 2 returns to lesson 1",
+    "steps": [
+      {
+        "send": { "callback": "lesson:prev:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📖 Lesson 1 of 4\n\nPractice daily to improve quickly.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Next →", "callback_data": "lesson:next:1" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Last lesson shows only Prev button",
+    "steps": [
+      {
+        "send": { "callback": "lesson:next:3" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📖 Lesson 4 of 4\n\nConsistency beats intensity every time.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "← Prev", "callback_data": "lesson:prev:2" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "main menu Micro-Lessons callback opens lesson 1",
+    "steps": [
+      {
+        "send": { "callback": "menu:lesson" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📖 Lesson 1 of 4\n\nPractice daily to improve quickly.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Next →", "callback_data": "lesson:next:1" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
