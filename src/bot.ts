@@ -37,6 +37,17 @@ const LOCALE_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard(
 
 const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale"]);
 
+async function notifyAdmin(bot: ReturnType<typeof createBot<Session>>, message: string) {
+  const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  if (adminChatId) {
+    try {
+      await bot.api.sendMessage(Number(adminChatId), message, { disable_notification: false });
+    } catch (_e) {
+      console.error("[agntdev-bot] failed to send admin notification:", _e);
+    }
+  }
+}
+
 function welcomeText(): string {
   return "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:";
 }
@@ -238,6 +249,17 @@ export function buildBot(token: string) {
       await ctx.answerPreCheckoutQuery(true);
     } else {
       await ctx.answerPreCheckoutQuery(false, "Unsupported invoice");
+      const userInfo = ctx.preCheckoutQuery.from
+        ? `${ctx.preCheckoutQuery.from.first_name} (ID: ${ctx.preCheckoutQuery.from.id})`
+        : "unknown user";
+      await notifyAdmin(
+        bot,
+        `⚠️ Payment rejected\n` +
+          `User: ${userInfo}\n` +
+          `Invoice: ${pq.invoice_payload}\n` +
+          `Amount: ${pq.total_amount} ${pq.currency}\n` +
+          `Reason: Unsupported invoice`,
+      );
     }
   });
 
@@ -255,14 +277,11 @@ export function buildBot(token: string) {
         await ctx.reply("Your account is now unlocked! 🎉");
       }
 
-      const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
-      if (adminChatId) {
-        const username = ctx.from.username ? `@${ctx.from.username}` : "no username";
-        await ctx.api.sendMessage(
-          Number(adminChatId),
-          `New purchase!\nUser: ${ctx.from.first_name} (ID: ${ctx.from.id}, ${username})\nTransaction: ${payment.telegram_payment_charge_id}`,
-        );
-      }
+      const username = ctx.from.username ? `@${ctx.from.username}` : "no username";
+      await notifyAdmin(
+        bot,
+        `New purchase!\nUser: ${ctx.from.first_name} (ID: ${ctx.from.id}, ${username})\nTransaction: ${payment.telegram_payment_charge_id}`,
+      );
     }
   });
 
@@ -272,6 +291,18 @@ export function buildBot(token: string) {
     } catch (_e) {
       // Best-effort reply — createBot's built-in catch already logs the error.
     }
+    const errorMsg = err.error instanceof Error ? err.error.message : String(err.error);
+    const chatInfo = err.ctx.chat ? `Chat: ${err.ctx.chat.id}` : "Chat: unknown";
+    const userInfo = err.ctx.from
+      ? `User: ${err.ctx.from.first_name} (ID: ${err.ctx.from.id})`
+      : "User: unknown";
+    await notifyAdmin(
+      bot,
+      `🚨 Critical error in bot\n` +
+        `Error: ${errorMsg}\n` +
+        `${chatInfo}\n` +
+        `${userInfo}`,
+    );
   });
 
   return bot;
