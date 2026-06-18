@@ -1,5 +1,5 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
+import { getLocaleStorage, getQuizScoreStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
 import { scheduleReminder, cancelReminder } from "./reminder.js";
 import { generateTypeWordQuiz, checkTypeWordAnswer } from "./quiz.js";
 
@@ -234,6 +234,24 @@ export function buildBot(token: string) {
     await ctx.reply("Daily reminders turned off. Send /reminders to schedule again.");
   });
 
+  bot.command("stats", async (ctx) => {
+    if (!ctx.from) return;
+    const userId = String(ctx.from.id);
+    const quizScoreStorage = getQuizScoreStorage();
+    const record = await quizScoreStorage.read(userId);
+    if (!record || record.scores.length === 0) {
+      await ctx.reply("No quiz scores yet. Try /practice or /typeword!");
+      return;
+    }
+    const latest = record.scores.slice(-5).reverse();
+    const lines = latest.map((s) => {
+      const date = new Date(s.date).toLocaleDateString();
+      const label = s.quizType === "practice" ? "Practice" : "Type Word";
+      return `${label}: ${s.score}/${s.total} (${date})`;
+    });
+    await ctx.reply(`📊 Your recent quiz scores:\n\n${lines.join("\n")}`);
+  });
+
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
     await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Multiple-choice quizzes\n/typeword — Type-the-word quizzes\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
@@ -287,6 +305,18 @@ export function buildBot(token: string) {
       const score = ctx.session.quizScore ?? 0;
       const total = QUIZ_QUESTIONS.length;
       await ctx.reply(`🎉 Quiz complete! You scored ${score}/${total}.`);
+      if (ctx.from) {
+        const userId = String(ctx.from.id);
+        const quizScoreStorage = getQuizScoreStorage();
+        const record = (await quizScoreStorage.read(userId)) ?? { scores: [] };
+        record.scores.push({
+          quizType: "practice",
+          score,
+          total,
+          date: new Date().toISOString(),
+        });
+        await quizScoreStorage.write(userId, record);
+      }
       ctx.session.quizQuestion = undefined;
       ctx.session.quizScore = undefined;
     }
@@ -304,7 +334,21 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:stats", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Use /stats to view your learning progress and activity.");
+    if (!ctx.from) return;
+    const userId = String(ctx.from.id);
+    const quizScoreStorage = getQuizScoreStorage();
+    const record = await quizScoreStorage.read(userId);
+    if (!record || record.scores.length === 0) {
+      await ctx.reply("No quiz scores yet. Try /practice or /typeword!");
+      return;
+    }
+    const latest = record.scores.slice(-5).reverse();
+    const lines = latest.map((s) => {
+      const date = new Date(s.date).toLocaleDateString();
+      const label = s.quizType === "practice" ? "Practice" : "Type Word";
+      return `${label}: ${s.score}/${s.total} (${date})`;
+    });
+    await ctx.reply(`📊 Your recent quiz scores:\n\n${lines.join("\n")}`);
   });
 
   bot.callbackQuery(/^locale:set:(.+)$/, async (ctx) => {
@@ -373,6 +417,18 @@ export function buildBot(token: string) {
         const score = ctx.session.typeWordScore ?? 0;
         const total = questions.length;
         await ctx.reply(`🎉 Type-the-word quiz complete! You scored ${score}/${total}.`);
+        if (ctx.from) {
+          const userId = String(ctx.from.id);
+          const quizScoreStorage = getQuizScoreStorage();
+          const record = (await quizScoreStorage.read(userId)) ?? { scores: [] };
+          record.scores.push({
+            quizType: "typeword",
+            score,
+            total,
+            date: new Date().toISOString(),
+          });
+          await quizScoreStorage.write(userId, record);
+        }
         ctx.session.typeWordQuestion = undefined;
         ctx.session.typeWordScore = undefined;
       }

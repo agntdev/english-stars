@@ -1,0 +1,178 @@
+[
+  {
+    "name": "/stats shows no scores when no quizzes taken",
+    "steps": [
+      {
+        "send": { "text": "/stats" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "No quiz scores yet. Try /practice or /typeword!"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "menu:stats callback shows no scores when empty",
+    "steps": [
+      {
+        "send": { "callback": "menu:stats" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "No quiz scores yet. Try /practice or /typeword!"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Incorrect practice answer shows feedback with correct answer",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Quiz — Question 1 of 4\n\nAccording to Micro-Lesson 1, what improves your skills quickly?\n\n❌ Incorrect. The correct answer was: Daily practice"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Quiz — Question 2 of 4\n\nWhat leads to mastery according to Micro-Lesson 2?",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Big breakthroughs", "callback_data": "practice:answer:1:0" }],
+                  [{ "text": "Small steps", "callback_data": "practice:answer:1:1" }],
+                  [{ "text": "Working alone", "callback_data": "practice:answer:1:2" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Practice quiz completion stores and displays final score",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 2 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:1:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 3 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:2:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 4 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:3:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Quiz — Question 4 of 4\n\nWhat beats intensity every time?\n\n❌ Incorrect. The correct answer was: Consistency"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "🎉 Quiz complete! You scored 2/4."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Type-word quiz completion shows final score after mixed answers",
+    "steps": [
+      {
+        "send": { "text": "/typeword" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nYour answer: practice\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 2 of 4\n\nWhat leads to mastery?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⌨️ Type the Word — Question 2 of 4\n\nWhat leads to mastery?\n\nYour answer: wrong\n\n❌ Incorrect. The correct answer was: small steps / small step"
+            }
+          },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 3 of 4\n\nHow often should you review past lessons?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "every week" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 3 of 4\n\nHow often should you review past lessons?\n\nYour answer: every week\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 4 of 4\n\nWhat beats intensity every time?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "consistency" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⌨️ Type the Word — Question 4 of 4\n\nWhat beats intensity every time?\n\nYour answer: consistency\n\n✅ Correct!"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "🎉 Type-the-word quiz complete! You scored 3/4."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

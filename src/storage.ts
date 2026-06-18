@@ -73,3 +73,29 @@ export function getReminderStorage(): StorageAdapter<ReminderData> {
   }
   return _reminderStorage;
 }
+
+export interface QuizScoreEntry {
+  quizType: "practice" | "typeword";
+  score: number;
+  total: number;
+  date: string;
+}
+
+export interface QuizScoreRecord {
+  scores: QuizScoreEntry[];
+}
+
+let _quizScoreStorage: StorageAdapter<QuizScoreRecord> | undefined;
+
+export function getQuizScoreStorage(): StorageAdapter<QuizScoreRecord> {
+  if (!_quizScoreStorage) {
+    if (process.env.DATABASE_URL) {
+      _quizScoreStorage = defaultPostgresStorage<QuizScoreRecord>(process.env.DATABASE_URL, "quizscore:");
+    } else if (process.env.REDIS_URL) {
+      _quizScoreStorage = defaultRedisStorage<QuizScoreRecord>(process.env.REDIS_URL);
+    } else {
+      _quizScoreStorage = new MemorySessionStorage<QuizScoreRecord>();
+    }
+  }
+  return _quizScoreStorage;
+}
