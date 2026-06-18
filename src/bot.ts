@@ -52,6 +52,17 @@ export function buildBot(token: string) {
     );
   });
 
+  bot.command("buy", async (ctx) => {
+    await ctx.replyWithInvoice(
+      "10 Stars",
+      "10 Stars package ($1.99)",
+      "buy_stars_10",
+      "XTR",
+      [{ label: "10 Stars", amount: 10 }],
+      { provider_token: "" },
+    );
+  });
+
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
     await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/stats — View your stats\n/help — Show this help");
