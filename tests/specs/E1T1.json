@@ -1,0 +1,23 @@
+[
+  {
+    "name": "/buy sends an invoice for 10 Stars",
+    "steps": [
+      {
+        "send": { "text": "/buy" },
+        "expect": [
+          {
+            "method": "sendInvoice",
+            "payload": {
+              "title": "10 Stars",
+              "description": "10 Stars package ($1.99)",
+              "payload": "buy_stars_10",
+              "provider_token": "",
+              "currency": "XTR",
+              "prices": [{ "label": "10 Stars", "amount": 10 }]
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
