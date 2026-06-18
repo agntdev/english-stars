@@ -1,5 +1,6 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
 import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
+import { scheduleReminder, cancelReminder } from "./reminder.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
@@ -34,7 +35,7 @@ const LOCALE_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard(
   LOCALES.map((loc) => [inlineButton(loc.name, `locale:set:${loc.code}`)]),
 );
 
-const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "stats", "locale"]);
+const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale"]);
 
 function welcomeText(): string {
   return "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:";
@@ -87,6 +88,7 @@ export function buildBot(token: string) {
       "/lesson — Micro-lessons\n" +
       "/practice — Practice quizzes\n" +
       "/reminders — Daily reminders\n" +
+      "/reminderoff — Turn off reminders\n" +
       "/stats — View your stats\n" +
       "/locale — Set language\n" +
       "/help — Show this help"
@@ -135,9 +137,23 @@ export function buildBot(token: string) {
     );
   });
 
+  bot.command("reminderoff", async (ctx) => {
+    if (!ctx.from) return;
+    const userId = String(ctx.from.id);
+    const reminderStorage = getReminderStorage();
+    const current = await reminderStorage.read(userId);
+    if (!current) {
+      await ctx.reply("No reminder is currently scheduled.");
+      return;
+    }
+    await reminderStorage.delete(userId);
+    await cancelReminder(userId);
+    await ctx.reply("Daily reminders turned off. Send /reminders to schedule again.");
+  });
+
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
+    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
   });
 
   bot.callbackQuery("menu:buy", async (ctx) => {
@@ -166,7 +182,7 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:reminders", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Use /reminders to set up daily practice reminders at your preferred time.");
+    await ctx.reply("Use /reminders to set up daily practice reminders at your preferred time. Use /reminderoff to disable them.");
   });
 
   bot.callbackQuery("menu:stats", async (ctx) => {
@@ -206,6 +222,7 @@ export function buildBot(token: string) {
         const userId = String(ctx.from.id);
         const reminderStorage = getReminderStorage();
         await reminderStorage.write(userId, { time });
+        await scheduleReminder(userId, time);
         await ctx.reply(`Reminder time set to ${time}.`);
       } else {
         await ctx.reply(`"${text}" is not a valid 24-hour time (HH:MM). Send /reminders to try again.`);

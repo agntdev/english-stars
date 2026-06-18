@@ -1,0 +1,99 @@
+[
+  {
+    "name": "/reminderoff shows message when no reminder is scheduled",
+    "steps": [
+      {
+        "send": { "text": "/reminderoff" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "No reminder is currently scheduled." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/reminderoff cancels an active reminder",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "14:30" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Reminder time set to 14:30." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminderoff" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Daily reminders turned off. Send /reminders to schedule again."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/reminders shows default again after turning reminders off",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "20:00" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Reminder time set to 20:00." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminderoff" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Daily reminders turned off. Send /reminders to schedule again."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
