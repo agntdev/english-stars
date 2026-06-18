@@ -1,0 +1,161 @@
+[
+  {
+    "name": "successful payment sends admin notification with user info and transaction ID",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": { "id": 100, "type": "private" },
+              "from": { "id": 100, "is_bot": false, "first_name": "Alice", "username": "alice_dev" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "txn-admin-abc123",
+                "provider_payment_charge_id": "provider-xyz"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 10 stars." }
+          },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your account is now unlocked! 🎉" }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "chat_id": 999999,
+              "text": "New purchase!\nUser: Alice (ID: 100, @alice_dev)\nTransaction: txn-admin-abc123"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "second payment sends admin notification but no duplicate unlock",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": { "id": 200, "type": "private" },
+              "from": { "id": 200, "is_bot": false, "first_name": "Bob", "username": "bob_dev" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "txn-admin-def456",
+                "provider_payment_charge_id": "provider-uvw"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 10 stars." }
+          },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your account is now unlocked! 🎉" }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "chat_id": 999999,
+              "text": "New purchase!\nUser: Bob (ID: 200, @bob_dev)\nTransaction: txn-admin-def456"
+            }
+          }
+        ]
+      },
+      {
+        "send": {
+          "update": {
+            "update_id": 2,
+            "message": {
+              "message_id": 2,
+              "date": 0,
+              "chat": { "id": 200, "type": "private" },
+              "from": { "id": 200, "is_bot": false, "first_name": "Bob", "username": "bob_dev" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "txn-admin-ghi789",
+                "provider_payment_charge_id": "provider-rst"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 20 stars." }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "chat_id": 999999,
+              "text": "New purchase!\nUser: Bob (ID: 200, @bob_dev)\nTransaction: txn-admin-ghi789"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "user without username shows 'no username' in admin notification",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": { "id": 300, "type": "private" },
+              "from": { "id": 300, "is_bot": false, "first_name": "Charlie" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "txn-nouser-000",
+                "provider_payment_charge_id": "provider-aaa"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 10 stars." }
+          },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your account is now unlocked! 🎉" }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "chat_id": 999999,
+              "text": "New purchase!\nUser: Charlie (ID: 300, no username)\nTransaction: txn-nouser-000"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
