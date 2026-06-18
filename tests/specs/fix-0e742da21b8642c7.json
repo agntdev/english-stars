@@ -1,0 +1,18 @@
+[
+  {
+    "name": "/stats for admin shows admin-level metrics",
+    "steps": [
+      {
+        "send": { "text": "/stats", "userId": 777 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📊 Admin Stats\n\n👥 Total /start invocations: 0\n💰 Total sales: 0"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
