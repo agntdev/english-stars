@@ -1,0 +1,43 @@
+[
+  {
+    "name": "/start replies with welcome and main menu",
+    "steps": [
+      {
+        "send": { "text": "/start" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "📚 Micro-Lessons", "callback_data": "menu:lesson" }],
+                  [{ "text": "🎯 Practice", "callback_data": "menu:practice" }],
+                  [{ "text": "⭐ Buy Stars", "callback_data": "menu:buy" }],
+                  [{ "text": "⏰ Reminders", "callback_data": "menu:reminders" }],
+                  [{ "text": "📊 Stats", "callback_data": "menu:stats" }],
+                  [{ "text": "ℹ️ Help", "callback_data": "menu:help" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "menu button tap routes to feature help",
+    "steps": [
+      {
+        "send": { "callback": "menu:buy" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Use /buy to purchase 10 Stars for $1.99 and unlock premium features." }
+          }
+        ]
+      }
+    ]
+  }
+]
