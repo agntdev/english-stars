@@ -1,0 +1,124 @@
+[
+  {
+    "name": "set reminder at midnight (00:00)",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "00:00" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Reminder time set to 00:00." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "set reminder at late time (23:59)",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "23:59" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Reminder time set to 23:59." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "invalid time format shows error",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "25:00" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "\"25:00\" is not a valid 24-hour time (HH:MM). Send /reminders to try again."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "re-opening /reminders shows existing time without default label",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "10:30" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Reminder time set to 10:30." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 10:30\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "18:00" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Reminder time set to 18:00." }
+          }
+        ]
+      }
+    ]
+  }
+]
