@@ -14,6 +14,8 @@ export interface Session {
   quizScore?: number;
   typeWordQuestion?: number;
   typeWordScore?: number;
+  adminAction?: "grant" | "refund";
+  adminTargetUserId?: string;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
@@ -41,7 +43,7 @@ const LOCALE_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard(
   LOCALES.map((loc) => [inlineButton(loc.name, `locale:set:${loc.code}`)]),
 );
 
-const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale", "typeword"]);
+const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale", "typeword", "admin"]);
 
 async function notifyAdmin(bot: ReturnType<typeof createBot<Session>>, message: string) {
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -284,6 +286,43 @@ export function buildBot(token: string) {
     );
   });
 
+  bot.command("admin", async (ctx) => {
+    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    if (!adminChatId || !ctx.from || String(ctx.from.id) !== adminChatId) {
+      await ctx.reply("You are not authorized to use admin commands.");
+      return;
+    }
+    const ADMIN_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard([
+      [inlineButton("🔓 Grant Access", "admin:grant")],
+      [inlineButton("💸 Process Refund", "admin:refund")],
+    ]);
+    await ctx.reply("🔧 Admin Panel\n\nChoose an action:", { reply_markup: ADMIN_MENU_KEYBOARD });
+  });
+
+  bot.callbackQuery("admin:grant", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    if (!adminChatId || !ctx.from || String(ctx.from.id) !== adminChatId) {
+      await ctx.reply("You are not authorized.");
+      return;
+    }
+    ctx.session.adminAction = "grant";
+    ctx.session.adminTargetUserId = undefined;
+    await ctx.reply("Send the user ID to grant access to:");
+  });
+
+  bot.callbackQuery("admin:refund", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    if (!adminChatId || !ctx.from || String(ctx.from.id) !== adminChatId) {
+      await ctx.reply("You are not authorized.");
+      return;
+    }
+    ctx.session.adminAction = "refund";
+    ctx.session.adminTargetUserId = undefined;
+    await ctx.reply("Send the user ID to process a refund for:");
+  });
+
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
     await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Multiple-choice quizzes\n/typeword — Type-the-word quizzes\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
@@ -407,6 +446,77 @@ export function buildBot(token: string) {
       const cmd = text.split(" ")[0].slice(1).split("@")[0].toLowerCase();
       if (!KNOWN_COMMANDS.has(cmd)) {
         await ctx.reply("Unknown command. Use /help to see available commands.");
+      }
+      return;
+    }
+    if (ctx.session.adminAction && ctx.from) {
+      const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+      if (adminChatId && String(ctx.from.id) === adminChatId) {
+        const targetId = ctx.session.adminTargetUserId;
+        if (ctx.session.adminAction === "grant") {
+          if (!targetId) {
+            const userId = text.trim();
+            if (!/^\d+$/.test(userId)) {
+              await ctx.reply("Invalid user ID. Please send a numeric user ID.");
+              return;
+            }
+            const userDataStorage = getUserDataStorage();
+            const data = await userDataStorage.read(userId);
+            if (!data) {
+              await ctx.reply(`User ${userId} not found.`);
+              ctx.session.adminAction = undefined;
+              return;
+            }
+            if (data.unlocked) {
+              await ctx.reply(`User ${userId} already has access.`);
+              ctx.session.adminAction = undefined;
+              return;
+            }
+            await userDataStorage.write(userId, { stars: data.stars, unlocked: true });
+            await ctx.reply(`Access granted to user ${userId}.`);
+            ctx.session.adminAction = undefined;
+            return;
+          }
+        }
+        if (ctx.session.adminAction === "refund") {
+          if (!targetId) {
+            const userId = text.trim();
+            if (!/^\d+$/.test(userId)) {
+              await ctx.reply("Invalid user ID. Please send a numeric user ID.");
+              return;
+            }
+            const userDataStorage = getUserDataStorage();
+            const data = await userDataStorage.read(userId);
+            if (!data) {
+              await ctx.reply(`User ${userId} not found.`);
+              ctx.session.adminAction = undefined;
+              return;
+            }
+            ctx.session.adminTargetUserId = userId;
+            await ctx.reply(`Send the number of stars to refund from user ${userId}:`);
+            return;
+          } else {
+            const amount = parseInt(text.trim(), 10);
+            if (isNaN(amount) || amount <= 0) {
+              await ctx.reply("Invalid amount. Please send a positive number of stars.");
+              return;
+            }
+            const userDataStorage = getUserDataStorage();
+            const data = await userDataStorage.read(targetId);
+            if (!data) {
+              await ctx.reply(`User ${targetId} not found.`);
+              ctx.session.adminAction = undefined;
+              ctx.session.adminTargetUserId = undefined;
+              return;
+            }
+            const newBalance = Math.max(0, data.stars - amount);
+            await userDataStorage.write(targetId, { stars: newBalance, unlocked: data.unlocked });
+            await ctx.reply(`Refunded ${amount} stars from user ${targetId}. New balance: ${newBalance} stars.`);
+            ctx.session.adminAction = undefined;
+            ctx.session.adminTargetUserId = undefined;
+            return;
+          }
+        }
       }
       return;
     }
