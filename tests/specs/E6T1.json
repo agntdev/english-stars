@@ -1,0 +1,32 @@
+[
+  {
+    "name": "/stats returns admin-only for non-admin users",
+    "steps": [
+      {
+        "send": { "text": "/stats" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "This command is only available to administrators." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/stats returns metrics for admin",
+    "steps": [
+      {
+        "send": { "text": "/stats", "userId": 999999 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📊 Bot Stats\n\nActive Users: 1\nTotal Sales: 0\nTotal Revenue: 0 stars"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

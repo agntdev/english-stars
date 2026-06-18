@@ -1,5 +1,5 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getLocaleStorage, getUserDataStorage } from "./storage.js";
+import { getLocaleStorage, getUserDataStorage, getStats, recordSale, recordActiveUser, countActiveUsers } from "./storage.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
@@ -74,6 +74,13 @@ export function buildBot(token: string) {
     initial: () => ({}),
   });
 
+  bot.use(async (ctx, next) => {
+    if (ctx.from) {
+      await recordActiveUser(String(ctx.from.id));
+    }
+    await next();
+  });
+
   bot.command("start", async (ctx) => {
     await ctx.reply(welcomeText(), { reply_markup: MAIN_MENU_KEYBOARD });
   });
@@ -89,6 +96,22 @@ export function buildBot(token: string) {
       "/stats — View your stats\n" +
       "/locale — Set language\n" +
       "/help — Show this help"
+    );
+  });
+
+  bot.command("stats", async (ctx) => {
+    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    if (!adminChatId || String(ctx.from?.id) !== adminChatId) {
+      await ctx.reply("This command is only available to administrators.");
+      return;
+    }
+    const stats = await getStats();
+    const activeUsers = await countActiveUsers();
+    await ctx.reply(
+      `📊 Bot Stats\n\n` +
+      `Active Users: ${activeUsers}\n` +
+      `Total Sales: ${stats.totalSales}\n` +
+      `Total Revenue: ${stats.totalRevenue} stars`,
     );
   });
 
@@ -204,6 +227,7 @@ export function buildBot(token: string) {
       const newBalance = current.stars + 10;
       const wasUnlocked = current.unlocked;
       await userDataStorage.write(userId, { stars: newBalance, unlocked: true });
+      await recordSale(10);
       await ctx.reply(`Payment received! You now have ${newBalance} stars.`);
       if (!wasUnlocked) {
         await ctx.reply("Your account is now unlocked! 🎉");
