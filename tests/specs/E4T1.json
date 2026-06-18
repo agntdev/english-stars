@@ -1,0 +1,142 @@
+[
+  {
+    "name": "/practice starts quiz with first question",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "❓ Question 1 of 6\n\nWhat is the 'spacing effect' in learning?",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Cramming all material in one sitting", "callback_data": "quiz:answer:0:0" }],
+                  [{ "text": "Spreading study sessions over time improves retention", "callback_data": "quiz:answer:0:1" }],
+                  [{ "text": "Adding extra spaces between words while reading", "callback_data": "quiz:answer:0:2" }],
+                  [{ "text": "Learning in a large physical space", "callback_data": "quiz:answer:0:3" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "correct answer shows feedback and advances to next question",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "❓ Question 1 of 6\n\nWhat is the 'spacing effect' in learning?" } }
+        ]
+      },
+      {
+        "send": { "callback": "quiz:answer:0:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "✅ Correct! (1/1)\n\n❓ Question 2 of 6\n\nWhich study technique has the strongest evidence for long-term retention?"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "wrong answer shows correction and advances to next question",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "❓ Question 1 of 6\n\nWhat is the 'spacing effect' in learning?" } }
+        ]
+      },
+      {
+        "send": { "callback": "quiz:answer:0:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "❌ Wrong. The correct answer was: \"Spreading study sessions over time improves retention\".\n\n❓ Question 2 of 6\n\nWhich study technique has the strongest evidence for long-term retention?"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "full quiz with mixed answers shows final score",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "❓ Question 1 of 6\n\nWhat is the 'spacing effect' in learning?" } }
+        ]
+      },
+      {
+        "send": { "callback": "quiz:answer:0:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "sendMessage", "payload": { "text": "✅ Correct! (1/1)\n\n❓ Question 2 of 6" } }
+        ]
+      },
+      {
+        "send": { "callback": "quiz:answer:1:2" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "sendMessage", "payload": { "text": "✅ Correct! (2/2)\n\n❓ Question 3 of 6" } }
+        ]
+      },
+      {
+        "send": { "callback": "quiz:answer:2:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "sendMessage", "payload": { "text": "❌ Wrong. The correct answer was: \"Connecting new information to what you already know\".\n\n❓ Question 4 of 6" } }
+        ]
+      },
+      {
+        "send": { "callback": "quiz:answer:3:2" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "sendMessage", "payload": { "text": "✅ Correct! (3/4)\n\n❓ Question 5 of 6" } }
+        ]
+      },
+      {
+        "send": { "callback": "quiz:answer:4:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "sendMessage", "payload": { "text": "✅ Correct! (4/5)\n\n❓ Question 6 of 6" } }
+        ]
+      },
+      {
+        "send": { "callback": "quiz:answer:5:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "✅ Correct!\n\n🎯 Quiz complete!\n\nScore: 5/6 (83%)\n🌟 Great job!"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "menu:practice callback starts quiz",
+    "steps": [
+      {
+        "send": { "callback": "menu:practice" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "sendMessage", "payload": { "text": "❓ Question 1 of 6\n\nWhat is the 'spacing effect' in learning?" } }
+        ]
+      }
+    ]
+  }
+]

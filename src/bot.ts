@@ -6,6 +6,8 @@ import { getLocaleStorage, getUserDataStorage } from "./storage.js";
 // persistent storage (see AGENTS.md).
 export interface Session {
   lessonPage?: number;
+  quizIndex?: number;
+  quizScore?: number;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
@@ -45,6 +47,86 @@ const MICRO_LESSONS: readonly string[] = [
   "Review past lessons every week.",
   "Consistency beats intensity every time.",
 ];
+
+interface QuizQuestion {
+  question: string;
+  options: [string, string, string, string];
+  correct: number;
+}
+
+const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
+  {
+    question: "What is the 'spacing effect' in learning?",
+    options: [
+      "Cramming all material in one sitting",
+      "Spreading study sessions over time improves retention",
+      "Adding extra spaces between words while reading",
+      "Learning in a large physical space",
+    ],
+    correct: 1,
+  },
+  {
+    question: "Which study technique has the strongest evidence for long-term retention?",
+    options: [
+      "Re-reading the textbook multiple times",
+      "Highlighting key passages",
+      "Active recall (self-testing)",
+      "Listening to lectures while sleeping",
+    ],
+    correct: 2,
+  },
+  {
+    question: "What is 'elaborative rehearsal'?",
+    options: [
+      "Repeating information aloud many times",
+      "Connecting new information to what you already know",
+      "Memorizing facts in alphabetical order",
+      "Practicing a skill until exhaustion",
+    ],
+    correct: 1,
+  },
+  {
+    question: "According to the Ebbinghaus forgetting curve, when is most information lost?",
+    options: [
+      "After one year",
+      "After one month",
+      "Within the first 24 hours",
+      "Information is never truly lost",
+    ],
+    correct: 2,
+  },
+  {
+    question: "What is 'interleaved practice'?",
+    options: [
+      "Practicing one skill until perfect, then moving on",
+      "Mixing different topics or skills in a single study session",
+      "Taking long breaks between every practice attempt",
+      "Studying only on alternating days",
+    ],
+    correct: 1,
+  },
+  {
+    question: "Which describes 'metacognition' in learning?",
+    options: [
+      "Learning through physical movement",
+      "Awareness and understanding of one's own thought processes",
+      "Studying in complete isolation",
+      "Using flashcards exclusively",
+    ],
+    correct: 1,
+  },
+];
+
+function quizMessage(index: number, q: QuizQuestion): string {
+  return `❓ Question ${index + 1} of ${QUIZ_QUESTIONS.length}\n\n${q.question}`;
+}
+
+function quizKeyboard(index: number): InlineKeyboardMarkup {
+  const q = QUIZ_QUESTIONS[index];
+  return inlineKeyboard(
+    q.options.map((opt, i) => [inlineButton(opt, `quiz:answer:${index}:${i}`)]),
+  );
+}
 
 function lessonMessage(page: number): string {
   const lesson = MICRO_LESSONS[page];
@@ -97,6 +179,13 @@ export function buildBot(token: string) {
     await ctx.reply(lessonMessage(0), { reply_markup: lessonKeyboard(0) });
   });
 
+  bot.command("practice", async (ctx) => {
+    ctx.session.quizIndex = 0;
+    ctx.session.quizScore = 0;
+    const q = QUIZ_QUESTIONS[0];
+    await ctx.reply(quizMessage(0, q), { reply_markup: quizKeyboard(0) });
+  });
+
   bot.command("buy", async (ctx) => {
     await ctx.replyWithInvoice(
       "10 Stars",
@@ -119,6 +208,48 @@ export function buildBot(token: string) {
       `Your current language: ${localeName}\n\nChoose a language:`,
       { reply_markup: LOCALE_MENU_KEYBOARD },
     );
+  });
+
+  bot.callbackQuery(/^quiz:answer:(\d+):(\d+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const qIndex = parseInt(ctx.match[1], 10);
+    const aIndex = parseInt(ctx.match[2], 10);
+    if (
+      isNaN(qIndex) || isNaN(aIndex) ||
+      ctx.session.quizIndex === undefined ||
+      qIndex !== ctx.session.quizIndex ||
+      qIndex >= QUIZ_QUESTIONS.length
+    ) return;
+    const q = QUIZ_QUESTIONS[qIndex];
+    const correct = aIndex === q.correct;
+    let score = ctx.session.quizScore ?? 0;
+    if (correct) score++;
+    ctx.session.quizScore = score;
+    const nextIndex = qIndex + 1;
+    if (nextIndex < QUIZ_QUESTIONS.length) {
+      ctx.session.quizIndex = nextIndex;
+      const nextQ = QUIZ_QUESTIONS[nextIndex];
+      const feedback = correct
+        ? `✅ Correct! (${score}/${nextIndex})\n\n`
+        : `❌ Wrong. The correct answer was: "${q.options[q.correct]}".\n\n`;
+      await ctx.reply(feedback + quizMessage(nextIndex, nextQ), { reply_markup: quizKeyboard(nextIndex) });
+    } else {
+      ctx.session.quizIndex = undefined;
+      ctx.session.quizScore = undefined;
+      const total = QUIZ_QUESTIONS.length;
+      const pct = Math.round((score / total) * 100);
+      let grade: string;
+      if (pct === 100) grade = "🏆 Perfect score!";
+      else if (pct >= 80) grade = "🌟 Great job!";
+      else if (pct >= 60) grade = "👍 Good effort!";
+      else grade = "📚 Keep practicing!";
+      const feedback = correct
+        ? `✅ Correct!\n\n`
+        : `❌ Wrong. The correct answer was: "${q.options[q.correct]}".\n\n`;
+      await ctx.reply(
+        `${feedback}🎯 Quiz complete!\n\nScore: ${score}/${total} (${pct}%)\n${grade}`,
+      );
+    }
   });
 
   bot.callbackQuery("menu:help", async (ctx) => {
@@ -147,7 +278,10 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:practice", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Use /practice to test your knowledge with interactive quizzes.");
+    ctx.session.quizIndex = 0;
+    ctx.session.quizScore = 0;
+    const q = QUIZ_QUESTIONS[0];
+    await ctx.reply(quizMessage(0, q), { reply_markup: quizKeyboard(0) });
   });
 
   bot.callbackQuery("menu:reminders", async (ctx) => {
