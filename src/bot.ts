@@ -1,11 +1,11 @@
 import { createBot, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getUserDataStorage } from "./storage.js";
+import { getUserDataStorage, getReminderTimeStorage } from "./storage.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
 // persistent storage (see AGENTS.md).
 export interface Session {
-  // example: step?: "awaiting_amount";
+  step?: "awaiting_reminder_time";
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
@@ -53,6 +53,26 @@ export function buildBot(token: string) {
     );
   });
 
+  bot.command("reminders", async (ctx) => {
+    if (!ctx.from) return;
+    const userId = String(ctx.from.id);
+    const reminderTimeStorage = getReminderTimeStorage();
+    const existing = await reminderTimeStorage.read(userId);
+
+    if (existing) {
+      await ctx.reply(
+        `Your daily reminder is currently set to ${existing.time}. ` +
+        "Send a new time in HH:MM 24h format to change it (e.g., 09:00, 14:30).",
+      );
+    } else {
+      await ctx.reply(
+        "Set your daily reminder time! Send a time in HH:MM 24h format (e.g., 09:00 for 9 AM, 14:30 for 2:30 PM). Default: 09:00.",
+      );
+    }
+
+    ctx.session.step = "awaiting_reminder_time";
+  });
+
   bot.command("buy", async (ctx) => {
     await ctx.replyWithInvoice(
       "10 Stars",
@@ -92,6 +112,27 @@ export function buildBot(token: string) {
   bot.callbackQuery("menu:stats", async (ctx) => {
     await ctx.answerCallbackQuery();
     await ctx.reply("Use /stats to view your learning progress and activity.");
+  });
+
+  bot.on("message:text", async (ctx, next) => {
+    if (ctx.session.step !== "awaiting_reminder_time") return await next();
+
+    const text = ctx.message.text.trim();
+
+    const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(text);
+    if (!match) {
+      await ctx.reply(
+        "Invalid format. Please enter a time in HH:MM 24h format (e.g., 09:00, 14:30).",
+      );
+      return;
+    }
+
+    if (!ctx.from) return;
+    const userId = String(ctx.from.id);
+    const reminderTimeStorage = getReminderTimeStorage();
+    await reminderTimeStorage.write(userId, { time: text });
+    ctx.session.step = undefined;
+    await ctx.reply(`Your daily reminder time has been set to ${text}.`);
   });
 
   bot.on("message:text", async (ctx) => {

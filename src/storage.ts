@@ -31,3 +31,20 @@ export function getUserDataStorage(): StorageAdapter<UserData> {
   }
   return _userDataStorage;
 }
+
+export interface ReminderTime {
+  time: string;
+}
+
+let _reminderTimeStorage: StorageAdapter<ReminderTime> | undefined;
+
+export function getReminderTimeStorage(): StorageAdapter<ReminderTime> {
+  if (!_reminderTimeStorage) {
+    if (process.env.REDIS_URL) {
+      _reminderTimeStorage = defaultRedisStorage<ReminderTime>(process.env.REDIS_URL);
+    } else {
+      _reminderTimeStorage = new MemorySessionStorage<ReminderTime>();
+    }
+  }
+  return _reminderTimeStorage;
+}

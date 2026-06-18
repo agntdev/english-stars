@@ -1,0 +1,94 @@
+[
+  {
+    "name": "/reminders prompts for time (first time)",
+    "steps": [
+      {
+        "send": { "text": "/reminders", "userId": 11 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Set your daily reminder time! Send a time in HH:MM 24h format (e.g., 09:00 for 9 AM, 14:30 for 2:30 PM). Default: 09:00." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/reminders stores valid time and confirms",
+    "steps": [
+      {
+        "send": { "text": "/reminders", "userId": 12 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Set your daily reminder time! Send a time in HH:MM 24h format (e.g., 09:00 for 9 AM, 14:30 for 2:30 PM). Default: 09:00." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "14:30", "userId": 12 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your daily reminder time has been set to 14:30." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/reminders shows existing time and accepts update",
+    "steps": [
+      {
+        "send": { "text": "/reminders", "userId": 13 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Set your daily reminder time! Send a time in HH:MM 24h format (e.g., 09:00 for 9 AM, 14:30 for 2:30 PM). Default: 09:00." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "08:00", "userId": 13 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your daily reminder time has been set to 08:00." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminders", "userId": 13 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your daily reminder is currently set to 08:00. Send a new time in HH:MM 24h format to change it (e.g., 09:00, 14:30)." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/reminders rejects invalid time format",
+    "steps": [
+      {
+        "send": { "text": "/reminders", "userId": 14 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Set your daily reminder time! Send a time in HH:MM 24h format (e.g., 09:00 for 9 AM, 14:30 for 2:30 PM). Default: 09:00." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "25:00", "userId": 14 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Invalid format. Please enter a time in HH:MM 24h format (e.g., 09:00, 14:30)." }
+          }
+        ]
+      }
+    ]
+  }
+]
