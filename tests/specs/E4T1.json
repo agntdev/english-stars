@@ -1,0 +1,234 @@
+[
+  {
+    "name": "/practice starts a quiz with question 1",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Quiz — Question 1 of 4\n\nAccording to Micro-Lesson 1, what improves your skills quickly?",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Daily practice", "callback_data": "practice:answer:0:0" }],
+                  [{ "text": "Watching videos", "callback_data": "practice:answer:0:1" }],
+                  [{ "text": "Reading books", "callback_data": "practice:answer:0:2" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Correct answer to Q1 shows feedback and Q2",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Quiz — Question 1 of 4\n\nAccording to Micro-Lesson 1, what improves your skills quickly?\n\n✅ Correct!"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Quiz — Question 2 of 4\n\nWhat leads to mastery according to Micro-Lesson 2?",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Big breakthroughs", "callback_data": "practice:answer:1:0" }],
+                  [{ "text": "Small steps", "callback_data": "practice:answer:1:1" }],
+                  [{ "text": "Working alone", "callback_data": "practice:answer:1:2" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Correct answer to Q2 shows feedback and Q3",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:1:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Quiz — Question 2 of 4\n\nWhat leads to mastery according to Micro-Lesson 2?\n\n✅ Correct!"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Quiz — Question 3 of 4\n\nHow often should you review past lessons?",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Every day", "callback_data": "practice:answer:2:0" }],
+                  [{ "text": "Every week", "callback_data": "practice:answer:2:1" }],
+                  [{ "text": "Every month", "callback_data": "practice:answer:2:2" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Correct answer to Q3 shows feedback and Q4",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:1:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:2:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Quiz — Question 3 of 4\n\nHow often should you review past lessons?\n\n✅ Correct!"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Quiz — Question 4 of 4\n\nWhat beats intensity every time?",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Speed", "callback_data": "practice:answer:3:0" }],
+                  [{ "text": "Consistency", "callback_data": "practice:answer:3:1" }],
+                  [{ "text": "Motivation", "callback_data": "practice:answer:3:2" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Correct answer to Q4 shows quiz complete with score",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:1:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:2:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:3:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Quiz — Question 4 of 4\n\nWhat beats intensity every time?\n\n✅ Correct!"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "🎉 Quiz complete! You scored 4/4."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "menu:practice callback starts a quiz",
+    "steps": [
+      {
+        "send": { "callback": "menu:practice" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Quiz — Question 1 of 4\n\nAccording to Micro-Lesson 1, what improves your skills quickly?",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Daily practice", "callback_data": "practice:answer:0:0" }],
+                  [{ "text": "Watching videos", "callback_data": "practice:answer:0:1" }],
+                  [{ "text": "Reading books", "callback_data": "practice:answer:0:2" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
