@@ -1,0 +1,43 @@
+[
+  {
+    "name": "/stats shows bot metrics counting itself",
+    "steps": [
+      {
+        "send": { "text": "/stats" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📊 Bot Statistics\n\n👥 Active Users: 1\n💰 Sales Count: 0\n💬 Total Messages: 1"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/stats accumulates message count from prior messages",
+    "steps": [
+      {
+        "send": { "text": "hello" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "You said: hello" }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/stats" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📊 Bot Statistics\n\n👥 Active Users: 1\n💰 Sales Count: 0\n💬 Total Messages: 2"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

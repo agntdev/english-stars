@@ -1,4 +1,5 @@
 import { createBot, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
+import { getStatsStore } from "./stats.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
@@ -35,6 +36,15 @@ export function buildBot(token: string) {
     initial: () => ({}),
   });
 
+  const store = getStatsStore();
+
+  bot.use(async (ctx, next) => {
+    if (ctx.from) {
+      await store.recordMessage(ctx.from.id);
+    }
+    await next();
+  });
+
   bot.command("start", async (ctx) => {
     await ctx.reply(welcomeText(), { reply_markup: MAIN_MENU_KEYBOARD });
   });
@@ -49,6 +59,16 @@ export function buildBot(token: string) {
       "/reminders — Daily reminders\n" +
       "/stats — View your stats\n" +
       "/help — Show this help"
+    );
+  });
+
+  bot.command("stats", async (ctx) => {
+    const s = await store.getStats();
+    await ctx.reply(
+      `📊 Bot Statistics\n\n` +
+      `👥 Active Users: ${s.activeUsers}\n` +
+      `💰 Sales Count: ${s.salesCount}\n` +
+      `💬 Total Messages: ${s.totalMessages}`
     );
   });
 
