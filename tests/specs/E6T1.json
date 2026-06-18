@@ -1,0 +1,35 @@
+[
+  {
+    "name": "/stats for regular user shows personal stats",
+    "steps": [
+      {
+        "send": { "text": "/stats" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📊 Your Stats\n\n⭐ Stars: 0\n🔒 Account: Not unlocked\n\nUse /buy to purchase stars and unlock your account."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "menu:stats callback prompts to use /stats",
+    "steps": [
+      {
+        "send": { "callback": "menu:stats" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Use /stats to view your learning progress and activity."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
