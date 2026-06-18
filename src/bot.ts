@@ -1,6 +1,7 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
 import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
 import { scheduleReminder, cancelReminder } from "./reminder.js";
+import { generateTypeWordQuiz, checkTypeWordAnswer } from "./quiz.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
@@ -10,6 +11,8 @@ export interface Session {
   awaitingReminderTime?: boolean;
   quizQuestion?: number;
   quizScore?: number;
+  typeWordQuestion?: number;
+  typeWordScore?: number;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
@@ -37,7 +40,7 @@ const LOCALE_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard(
   LOCALES.map((loc) => [inlineButton(loc.name, `locale:set:${loc.code}`)]),
 );
 
-const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale"]);
+const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale", "typeword"]);
 
 async function notifyAdmin(bot: ReturnType<typeof createBot<Session>>, message: string) {
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -147,7 +150,8 @@ export function buildBot(token: string) {
       "/start — Main menu\n" +
       "/buy — Buy Stars\n" +
       "/lesson — Micro-lessons\n" +
-      "/practice — Practice quizzes\n" +
+      "/practice — Multiple-choice quizzes\n" +
+      "/typeword — Type-the-word quizzes\n" +
       "/reminders — Daily reminders\n" +
       "/reminderoff — Turn off reminders\n" +
       "/stats — View your stats\n" +
@@ -163,6 +167,20 @@ export function buildBot(token: string) {
 
   bot.command("practice", async (ctx) => {
     await startQuiz(ctx);
+  });
+
+  bot.command("typeword", async (ctx) => {
+    const questions = generateTypeWordQuiz(MICRO_LESSONS);
+    if (questions.length === 0) {
+      await ctx.reply("No type-the-word questions available right now.");
+      return;
+    }
+    ctx.session.typeWordQuestion = 0;
+    ctx.session.typeWordScore = 0;
+    const q = questions[0];
+    await ctx.reply(
+      `⌨️ Type the Word — Question 1 of ${questions.length}\n\n${q.text}\n\nType your answer below:`,
+    );
   });
 
   bot.command("buy", async (ctx) => {
@@ -218,7 +236,7 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
+    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Multiple-choice quizzes\n/typeword — Type-the-word quizzes\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
   });
 
   bot.callbackQuery("menu:buy", async (ctx) => {
@@ -325,6 +343,38 @@ export function buildBot(token: string) {
         await ctx.reply(`Reminder time set to ${time}.`);
       } else {
         await ctx.reply(`"${text}" is not a valid 24-hour time (HH:MM). Send /reminders to try again.`);
+      }
+      return;
+    }
+    if (ctx.session.typeWordQuestion !== undefined) {
+      const questions = generateTypeWordQuiz(MICRO_LESSONS);
+      const idx = ctx.session.typeWordQuestion;
+      if (idx >= questions.length) return;
+      const q = questions[idx];
+      const correct = checkTypeWordAnswer(q, text);
+      if (correct) {
+        ctx.session.typeWordScore = (ctx.session.typeWordScore ?? 0) + 1;
+      }
+      const expected = q.answers.join(" / ");
+      const feedback = correct
+        ? "✅ Correct!"
+        : `❌ Incorrect. The correct answer was: ${expected}`;
+      await ctx.reply(
+        `⌨️ Type the Word — Question ${idx + 1} of ${questions.length}\n\n${q.text}\n\nYour answer: ${text}\n\n${feedback}`,
+      );
+      const nextIdx = idx + 1;
+      if (nextIdx < questions.length) {
+        ctx.session.typeWordQuestion = nextIdx;
+        const nq = questions[nextIdx];
+        await ctx.reply(
+          `⌨️ Type the Word — Question ${nextIdx + 1} of ${questions.length}\n\n${nq.text}\n\nType your answer below:`,
+        );
+      } else {
+        const score = ctx.session.typeWordScore ?? 0;
+        const total = questions.length;
+        await ctx.reply(`🎉 Type-the-word quiz complete! You scored ${score}/${total}.`);
+        ctx.session.typeWordQuestion = undefined;
+        ctx.session.typeWordScore = undefined;
       }
       return;
     }
