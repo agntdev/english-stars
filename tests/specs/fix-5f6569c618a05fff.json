@@ -1,0 +1,270 @@
+[
+  {
+    "name": "Admin grant — invalid user ID rejected",
+    "steps": [
+      {
+        "send": { "text": "/admin", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "🔧 Admin Panel" }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "admin:grant", "userId": 42 },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Send the user ID to grant access to:" }
+          }
+        ]
+      },
+      {
+        "send": { "text": "not-a-number", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Invalid user ID. Please send a numeric user ID." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Admin grant — user not found",
+    "steps": [
+      {
+        "send": { "text": "/admin", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "🔧 Admin Panel" }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "admin:grant", "userId": 42 },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Send the user ID to grant access to:" }
+          }
+        ]
+      },
+      {
+        "send": { "text": "99999", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "User 99999 not found." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Admin grant — user already has access",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 100,
+            "message": {
+              "message_id": 100,
+              "date": 0,
+              "chat": { "id": 555, "type": "private", "first_name": "Target" },
+              "from": { "id": 555, "is_bot": false, "first_name": "Target" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "charge-seed-1",
+                "provider_payment_charge_id": "provider-seed-1"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 10 stars." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/admin", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "🔧 Admin Panel" }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "admin:grant", "userId": 42 },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Send the user ID to grant access to:" }
+          }
+        ]
+      },
+      {
+        "send": { "text": "555", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "User 555 already has access." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Admin refund — invalid user ID rejected",
+    "steps": [
+      {
+        "send": { "text": "/admin", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "🔧 Admin Panel" }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "admin:refund", "userId": 42 },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Send the user ID to process a refund for:" }
+          }
+        ]
+      },
+      {
+        "send": { "text": "xyz", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Invalid user ID. Please send a numeric user ID." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Admin refund — user not found",
+    "steps": [
+      {
+        "send": { "text": "/admin", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "🔧 Admin Panel" }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "admin:refund", "userId": 42 },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Send the user ID to process a refund for:" }
+          }
+        ]
+      },
+      {
+        "send": { "text": "88888", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "User 88888 not found." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Admin refund — full path with invalid amount then successful refund",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 200,
+            "message": {
+              "message_id": 200,
+              "date": 0,
+              "chat": { "id": 777, "type": "private", "first_name": "RefundTarget" },
+              "from": { "id": 777, "is_bot": false, "first_name": "RefundTarget" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "charge-seed-2",
+                "provider_payment_charge_id": "provider-seed-2"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 10 stars." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/admin", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "🔧 Admin Panel" }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "admin:refund", "userId": 42 },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Send the user ID to process a refund for:" }
+          }
+        ]
+      },
+      {
+        "send": { "text": "777", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Send the number of stars to refund from user 777:" }
+          }
+        ]
+      },
+      {
+        "send": { "text": "bad", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Invalid amount. Please send a positive number of stars." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "4", "userId": 42 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Refunded 4 stars from user 777. New balance: 6 stars." }
+          }
+        ]
+      }
+    ]
+  }
+]
