@@ -419,8 +419,13 @@ export function buildBot(token: string) {
         const cadence = ctx.session.reminderCadence ?? "daily";
         ctx.session.reminderCadence = undefined;
         const reminderStorage = getReminderStorage();
-        await reminderStorage.write(userId, { time, cadence });
         await scheduleReminder(userId, time, cadence);
+        try {
+          await reminderStorage.write(userId, { time, cadence });
+        } catch (e) {
+          await cancelReminder(userId);
+          throw e;
+        }
         const cadenceLabel = cadence === "every_other_day" ? " (every-other-day)" : "";
         await ctx.reply(`Reminder time set to ${time}${cadenceLabel}.`);
       } else {
