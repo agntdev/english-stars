@@ -1,0 +1,119 @@
+[
+  {
+    "name": "/cards command shows word card 1 of 5 with Next and Play audio buttons",
+    "steps": [
+      {
+        "send": { "text": "/cards" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Word Card 1 of 5\n\n*Ephemeral*\n_adjective_\n\nLasting for a very short time.\n\n💬 Example: The beauty of cherry blossoms is ephemeral, lasting only a few days.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Next →", "callback_data": "cards:next:1" }],
+                  [{ "text": "🔊 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Ephemeral" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Next button from card 1 navigates to card 2 with both Prev, Next and Play audio",
+    "steps": [
+      {
+        "send": { "callback": "cards:next:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Word Card 2 of 5\n\n*Ubiquitous*\n_adjective_\n\nPresent, appearing, or found everywhere.\n\n💬 Example: Smartphones have become ubiquitous in modern society.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "← Prev", "callback_data": "cards:prev:0" },
+                    { "text": "Next →", "callback_data": "cards:next:2" }
+                  ],
+                  [{ "text": "🔊 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Ubiquitous" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Prev button from card 2 returns to card 1",
+    "steps": [
+      {
+        "send": { "callback": "cards:prev:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Word Card 1 of 5\n\n*Ephemeral*\n_adjective_\n\nLasting for a very short time.\n\n💬 Example: The beauty of cherry blossoms is ephemeral, lasting only a few days.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Next →", "callback_data": "cards:next:1" }],
+                  [{ "text": "🔊 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Ephemeral" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Last card shows only Prev and Play audio buttons",
+    "steps": [
+      {
+        "send": { "callback": "cards:next:4" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Word Card 5 of 5\n\n*Resilient*\n_adjective_\n\nAble to withstand or recover quickly from difficult conditions.\n\n💬 Example: Children are remarkably resilient and adapt to change well.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "← Prev", "callback_data": "cards:prev:3" }],
+                  [{ "text": "🔊 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Resilient" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "main menu Word Cards callback opens card 1",
+    "steps": [
+      {
+        "send": { "callback": "menu:cards" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Word Card 1 of 5\n\n*Ephemeral*\n_adjective_\n\nLasting for a very short time.\n\n💬 Example: The beauty of cherry blossoms is ephemeral, lasting only a few days.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Next →", "callback_data": "cards:next:1" }],
+                  [{ "text": "🔊 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Ephemeral" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

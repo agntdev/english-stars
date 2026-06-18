@@ -1,5 +1,5 @@
-import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
+import { createBot, inlineButton, inlineKeyboard, menuKeyboard, urlButton, type InlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
+import { getLocaleStorage, getReminderStorage, getUserDataStorage, getVocabWords, type VocabWord } from "./storage.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
@@ -7,10 +7,12 @@ import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./stor
 export interface Session {
   lessonPage?: number;
   awaitingReminderTime?: boolean;
+  cardPage?: number;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
   { text: "📚 Micro-Lessons", data: "menu:lesson" },
+  { text: "📝 Word Cards", data: "menu:cards" },
   { text: "🎯 Practice", data: "menu:practice" },
   { text: "⭐ Buy Stars", data: "menu:buy" },
   { text: "⏰ Reminders", data: "menu:reminders" },
@@ -34,7 +36,7 @@ const LOCALE_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard(
   LOCALES.map((loc) => [inlineButton(loc.name, `locale:set:${loc.code}`)]),
 );
 
-const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "stats", "locale"]);
+const KNOWN_COMMANDS = new Set(["start", "help", "buy", "cards", "lesson", "practice", "reminders", "stats", "locale"]);
 
 function welcomeText(): string {
   return "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:";
@@ -64,6 +66,28 @@ function lessonKeyboard(page: number): InlineKeyboardMarkup {
   return menuKeyboard(row, row.length);
 }
 
+function cardMessage(page: number, words: VocabWord[]): string {
+  const word = words[page];
+  return `📝 Word Card ${page + 1} of ${words.length}\n\n*${word.word}*\n_${word.partOfSpeech}_\n\n${word.definition}\n\n💬 Example: ${word.example}`;
+}
+
+function cardKeyboard(page: number, words: VocabWord[]): InlineKeyboardMarkup {
+  const total = words.length;
+  const navRow: InlineButton[] = [];
+  if (page > 0) {
+    navRow.push(inlineButton("← Prev", `cards:prev:${page - 1}`));
+  }
+  if (page < total - 1) {
+    navRow.push(inlineButton("Next →", `cards:next:${page + 1}`));
+  }
+  const word = words[page];
+  const audioUrl = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(word.word)}`;
+  const rows = [];
+  if (navRow.length > 0) rows.push(navRow);
+  rows.push([urlButton("🔊 Play audio", audioUrl)]);
+  return { inline_keyboard: rows };
+}
+
 /**
  * buildBot — assembles the bot and registers every handler, but does NOT start
  * it. Shared by the runtime entry (src/index.ts) and the Tests-gate harness
@@ -84,6 +108,7 @@ export function buildBot(token: string) {
       "Available commands:\n" +
       "/start — Main menu\n" +
       "/buy — Buy Stars\n" +
+      "/cards — Word cards\n" +
       "/lesson — Micro-lessons\n" +
       "/practice — Practice quizzes\n" +
       "/reminders — Daily reminders\n" +
@@ -137,7 +162,7 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
+    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/cards — Word cards\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
   });
 
   bot.callbackQuery("menu:buy", async (ctx) => {
@@ -157,6 +182,36 @@ export function buildBot(token: string) {
     if (isNaN(page) || page < 0 || page >= MICRO_LESSONS.length) return;
     ctx.session.lessonPage = page;
     await ctx.editMessageText(lessonMessage(page), { reply_markup: lessonKeyboard(page) });
+  });
+
+  bot.command("cards", async (ctx) => {
+    const words = await getVocabWords();
+    if (words.length === 0) {
+      await ctx.reply("No word cards available.");
+      return;
+    }
+    ctx.session.cardPage = 0;
+    await ctx.reply(cardMessage(0, words), { reply_markup: cardKeyboard(0, words), parse_mode: "Markdown" });
+  });
+
+  bot.callbackQuery("menu:cards", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const words = await getVocabWords();
+    if (words.length === 0) {
+      await ctx.reply("No word cards available.");
+      return;
+    }
+    ctx.session.cardPage = 0;
+    await ctx.reply(cardMessage(0, words), { reply_markup: cardKeyboard(0, words), parse_mode: "Markdown" });
+  });
+
+  bot.callbackQuery(/^cards:(next|prev):(\d+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const page = parseInt(ctx.match[2], 10);
+    const words = await getVocabWords();
+    if (isNaN(page) || page < 0 || page >= words.length) return;
+    ctx.session.cardPage = page;
+    await ctx.editMessageText(cardMessage(page, words), { reply_markup: cardKeyboard(page, words), parse_mode: "Markdown" });
   });
 
   bot.callbackQuery("menu:practice", async (ctx) => {

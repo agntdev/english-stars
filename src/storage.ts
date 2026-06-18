@@ -73,3 +73,36 @@ export function getReminderStorage(): StorageAdapter<ReminderData> {
   }
   return _reminderStorage;
 }
+
+export interface VocabWord {
+  word: string;
+  partOfSpeech: string;
+  definition: string;
+  example: string;
+}
+
+const SEED_VOCABULARY: VocabWord[] = [
+  { word: "Ephemeral", partOfSpeech: "adjective", definition: "Lasting for a very short time.", example: "The beauty of cherry blossoms is ephemeral, lasting only a few days." },
+  { word: "Ubiquitous", partOfSpeech: "adjective", definition: "Present, appearing, or found everywhere.", example: "Smartphones have become ubiquitous in modern society." },
+  { word: "Pragmatic", partOfSpeech: "adjective", definition: "Dealing with things sensibly and realistically.", example: "She took a pragmatic approach to solving the budget crisis." },
+  { word: "Eloquent", partOfSpeech: "adjective", definition: "Fluent or persuasive in speaking or writing.", example: "The graduation speaker delivered an eloquent address." },
+  { word: "Resilient", partOfSpeech: "adjective", definition: "Able to withstand or recover quickly from difficult conditions.", example: "Children are remarkably resilient and adapt to change well." },
+];
+
+let _vocabStorage: StorageAdapter<VocabWord[]> | undefined;
+
+export async function getVocabWords(): Promise<VocabWord[]> {
+  if (!_vocabStorage) {
+    if (process.env.DATABASE_URL) {
+      _vocabStorage = defaultPostgresStorage<VocabWord[]>(process.env.DATABASE_URL, "vocab:");
+    } else if (process.env.REDIS_URL) {
+      _vocabStorage = defaultRedisStorage<VocabWord[]>(process.env.REDIS_URL);
+    } else {
+      _vocabStorage = new MemorySessionStorage<VocabWord[]>();
+    }
+  }
+  const existing = await _vocabStorage.read("words");
+  if (existing && existing.length > 0) return existing;
+  await _vocabStorage.write("words", SEED_VOCABULARY);
+  return SEED_VOCABULARY;
+}
