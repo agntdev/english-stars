@@ -128,6 +128,15 @@ export function buildBot(token: string) {
       if (!wasUnlocked) {
         await ctx.reply("Your account is now unlocked! 🎉");
       }
+
+      const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+      if (adminChatId) {
+        const username = ctx.from.username ? `@${ctx.from.username}` : "no username";
+        await ctx.api.sendMessage(
+          Number(adminChatId),
+          `New purchase!\nUser: ${ctx.from.first_name} (ID: ${ctx.from.id}, ${username})\nTransaction: ${payment.telegram_payment_charge_id}`,
+        );
+      }
     }
   });
 
