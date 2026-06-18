@@ -1,0 +1,52 @@
+[
+  {
+    "name": "pre_checkout_query rejects unknown invoice (payment failure triggers error notification path)",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "pre_checkout_query": {
+              "id": "pq-reject",
+              "from": { "id": 99, "is_bot": false, "first_name": "BadUser" },
+              "currency": "XTR",
+              "total_amount": 99,
+              "invoice_payload": "hacked_product"
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "answerPreCheckoutQuery",
+            "payload": { "ok": false, "error_message": "Unsupported invoice" }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "valid pre_checkout_query still approved after error notification changes",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 2,
+            "pre_checkout_query": {
+              "id": "pq-ok",
+              "from": { "id": 42, "is_bot": false, "first_name": "GoodUser" },
+              "currency": "XTR",
+              "total_amount": 10,
+              "invoice_payload": "buy_stars_10"
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "answerPreCheckoutQuery",
+            "payload": { "ok": true }
+          }
+        ]
+      }
+    ]
+  }
+]
