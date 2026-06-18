@@ -1,5 +1,5 @@
-import { createBot, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getUserDataStorage } from "./storage.js";
+import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
+import { getLocaleStorage, getUserDataStorage } from "./storage.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
@@ -19,7 +19,21 @@ const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
 
 const MAIN_MENU_KEYBOARD: InlineKeyboardMarkup = menuKeyboard(MAIN_MENU);
 
-const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "stats"]);
+const LOCALES: ReadonlyArray<{ code: string; name: string }> = [
+  { code: "en", name: "🇬🇧 English" },
+  { code: "es", name: "🇪🇸 Español" },
+  { code: "fr", name: "🇫🇷 Français" },
+  { code: "de", name: "🇩🇪 Deutsch" },
+  { code: "ru", name: "🇷🇺 Русский" },
+  { code: "zh", name: "🇨🇳 中文" },
+  { code: "ar", name: "🇸🇦 العربية" },
+];
+
+const LOCALE_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard(
+  LOCALES.map((loc) => [inlineButton(loc.name, `locale:set:${loc.code}`)]),
+);
+
+const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "stats", "locale"]);
 
 function welcomeText(): string {
   return "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:";
@@ -49,6 +63,7 @@ export function buildBot(token: string) {
       "/practice — Practice quizzes\n" +
       "/reminders — Daily reminders\n" +
       "/stats — View your stats\n" +
+      "/locale — Set language\n" +
       "/help — Show this help"
     );
   });
@@ -64,9 +79,22 @@ export function buildBot(token: string) {
     );
   });
 
+  bot.command("locale", async (ctx) => {
+    if (!ctx.from) return;
+    const userId = String(ctx.from.id);
+    const localeStorage = getLocaleStorage();
+    const current = await localeStorage.read(userId);
+    const currentLocale = current?.locale ?? "en";
+    const localeName = LOCALES.find((l) => l.code === currentLocale)?.name ?? currentLocale;
+    await ctx.reply(
+      `Your current language: ${localeName}\n\nChoose a language:`,
+      { reply_markup: LOCALE_MENU_KEYBOARD },
+    );
+  });
+
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/stats — View your stats\n/help — Show this help");
+    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
   });
 
   bot.callbackQuery("menu:buy", async (ctx) => {
@@ -92,6 +120,20 @@ export function buildBot(token: string) {
   bot.callbackQuery("menu:stats", async (ctx) => {
     await ctx.answerCallbackQuery();
     await ctx.reply("Use /stats to view your learning progress and activity.");
+  });
+
+  bot.callbackQuery(/^locale:set:(.+)$/, async (ctx) => {
+    const code = ctx.match[1];
+    const localeInfo = LOCALES.find((l) => l.code === code);
+    if (!localeInfo) {
+      await ctx.answerCallbackQuery("Unknown language.");
+      return;
+    }
+    const userId = String(ctx.from.id);
+    const localeStorage = getLocaleStorage();
+    await localeStorage.write(userId, { locale: code });
+    await ctx.answerCallbackQuery();
+    await ctx.reply(`Language set to ${localeInfo.name}.`);
   });
 
   bot.on("message:text", async (ctx) => {
