@@ -1,0 +1,248 @@
+[
+  {
+    "name": "Practice quiz correct answers: score 4/4",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 1 of 4\n\nAccording to Micro-Lesson 1, what improves your skills quickly?\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 2 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:1:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 2 of 4\n\nWhat leads to mastery according to Micro-Lesson 2?\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 3 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:2:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 3 of 4\n\nHow often should you review past lessons?\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 4 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:3:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 4 of 4\n\nWhat beats intensity every time?\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "🎉 Quiz complete! You scored 4/4." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Practice quiz mixed answers: score 2/4",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 1 of 4\n\nAccording to Micro-Lesson 1, what improves your skills quickly?\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 2 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:1:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 2 of 4\n\nWhat leads to mastery according to Micro-Lesson 2?\n\n❌ Incorrect. The correct answer was: Small steps" } },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 3 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:2:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 3 of 4\n\nHow often should you review past lessons?\n\n❌ Incorrect. The correct answer was: Every week" } },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 4 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:3:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 4 of 4\n\nWhat beats intensity every time?\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "🎉 Quiz complete! You scored 2/4." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Practice quiz all wrong: score 0/4",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 1 of 4\n\nAccording to Micro-Lesson 1, what improves your skills quickly?\n\n❌ Incorrect. The correct answer was: Daily practice" } },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 2 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:1:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 2 of 4\n\nWhat leads to mastery according to Micro-Lesson 2?\n\n❌ Incorrect. The correct answer was: Small steps" } },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 3 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:2:2" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 3 of 4\n\nHow often should you review past lessons?\n\n❌ Incorrect. The correct answer was: Every week" } },
+          { "method": "sendMessage", "payload": { "text": "📝 Quiz — Question 4 of 4" } }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:3:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText", "payload": { "text": "📝 Quiz — Question 4 of 4\n\nWhat beats intensity every time?\n\n❌ Incorrect. The correct answer was: Consistency" } },
+          { "method": "sendMessage", "payload": { "text": "🎉 Quiz complete! You scored 0/4." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Typeword quiz correct answers: score 4/4",
+    "steps": [
+      {
+        "send": { "text": "/typeword" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nYour answer: practice\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 2 of 4\n\nWhat leads to mastery?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "small steps" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 3 of 4\n\nHow often should you review past lessons?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "every week" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 4 of 4\n\nWhat beats intensity every time?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "consistency" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 4 of 4\n\nWhat beats intensity every time?\n\nYour answer: consistency\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "🎉 Type-the-word quiz complete! You scored 4/4." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Typeword quiz mixed answers: score 1/4",
+    "steps": [
+      {
+        "send": { "text": "/typeword" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "text": "practice" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nYour answer: practice\n\n✅ Correct!" } },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 2 of 4" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 2 of 4\n\nWhat leads to mastery?\n\nYour answer: wrong\n\n❌ Incorrect. The correct answer was: small steps / small step" } },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 3 of 4" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 3 of 4\n\nHow often should you review past lessons?\n\nYour answer: wrong\n\n❌ Incorrect. The correct answer was: every week / weekly" } },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 4 of 4" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 4 of 4\n\nWhat beats intensity every time?\n\nYour answer: wrong\n\n❌ Incorrect. The correct answer was: consistency" } },
+          { "method": "sendMessage", "payload": { "text": "🎉 Type-the-word quiz complete! You scored 1/4." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Typeword quiz all wrong: score 0/4",
+    "steps": [
+      {
+        "send": { "text": "/typeword" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong1" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 2 of 4" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong2" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 3 of 4" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong3" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 4 of 4" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong4" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "🎉 Type-the-word quiz complete! You scored 0/4." } }
+        ]
+      }
+    ]
+  }
+]

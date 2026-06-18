@@ -100,3 +100,46 @@ export async function incrementStat(key: string, field: keyof StatsData): Promis
   current[field]++;
   await storage.write(key, current);
 }
+
+export interface QuizScoreEntry {
+  quizType: "practice" | "typeword";
+  score: number;
+  total: number;
+  at: string;
+}
+
+export interface QuizScoresData {
+  entries: QuizScoreEntry[];
+}
+
+let _quizScoreStorage: StorageAdapter<QuizScoresData> | undefined;
+
+export function getQuizScoreStorage(): StorageAdapter<QuizScoresData> {
+  if (!_quizScoreStorage) {
+    if (process.env.DATABASE_URL) {
+      _quizScoreStorage = defaultPostgresStorage<QuizScoresData>(process.env.DATABASE_URL, "quiz:");
+    } else if (process.env.REDIS_URL) {
+      _quizScoreStorage = defaultRedisStorage<QuizScoresData>(process.env.REDIS_URL);
+    } else {
+      _quizScoreStorage = new MemorySessionStorage<QuizScoresData>();
+    }
+  }
+  return _quizScoreStorage;
+}
+
+export async function saveQuizScore(
+  userId: string,
+  quizType: "practice" | "typeword",
+  score: number,
+  total: number,
+): Promise<void> {
+  const storage = getQuizScoreStorage();
+  const current = (await storage.read(userId)) ?? { entries: [] };
+  current.entries.push({
+    quizType,
+    score,
+    total,
+    at: new Date().toISOString(),
+  });
+  await storage.write(userId, current);
+}
