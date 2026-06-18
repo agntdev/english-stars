@@ -1,5 +1,5 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
+import { getLocaleStorage, getReminderStorage, getStatsStorage, getUserDataStorage, incrementStat } from "./storage.js";
 import { scheduleReminder, cancelReminder } from "./reminder.js";
 import { generateTypeWordQuiz, checkTypeWordAnswer } from "./quiz.js";
 
@@ -142,6 +142,7 @@ export function buildBot(token: string) {
 
   bot.command("start", async (ctx) => {
     await ctx.reply(welcomeText(), { reply_markup: MAIN_MENU_KEYBOARD });
+    await incrementStat("global", "totalStarts");
   });
 
   bot.command("help", async (ctx) => {
@@ -232,6 +233,30 @@ export function buildBot(token: string) {
     await reminderStorage.delete(userId);
     await cancelReminder(userId);
     await ctx.reply("Daily reminders turned off. Send /reminders to schedule again.");
+  });
+
+  bot.command("stats", async (ctx) => {
+    if (!ctx.from) return;
+    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    if (adminChatId && String(ctx.from.id) === adminChatId) {
+      const statsStorage = getStatsStorage();
+      const stats = (await statsStorage.read("global")) ?? { totalStarts: 0, totalSales: 0 };
+      await ctx.reply(
+        "📊 Admin Stats\n\n" +
+        `👥 Total /start invocations: ${stats.totalStarts}\n` +
+        `💰 Total sales: ${stats.totalSales}`,
+      );
+      return;
+    }
+    const userId = String(ctx.from.id);
+    const userDataStorage = getUserDataStorage();
+    const data = (await userDataStorage.read(userId)) ?? { stars: 0, unlocked: false };
+    await ctx.reply(
+      "📊 Your Stats\n\n" +
+      `⭐ Stars: ${data.stars}\n` +
+      `🔒 Account: ${data.unlocked ? "Unlocked ✅" : "Not unlocked"}\n\n` +
+      "Use /buy to purchase stars and unlock your account.",
+    );
   });
 
   bot.callbackQuery("menu:help", async (ctx) => {
@@ -414,6 +439,8 @@ export function buildBot(token: string) {
       if (!wasUnlocked) {
         await ctx.reply("Your account is now unlocked! 🎉");
       }
+
+      await incrementStat("global", "totalSales");
 
       const username = ctx.from.username ? `@${ctx.from.username}` : "no username";
       await notifyAdmin(

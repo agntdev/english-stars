@@ -73,3 +73,30 @@ export function getReminderStorage(): StorageAdapter<ReminderData> {
   }
   return _reminderStorage;
 }
+
+export interface StatsData {
+  totalStarts: number;
+  totalSales: number;
+}
+
+let _statsStorage: StorageAdapter<StatsData> | undefined;
+
+export function getStatsStorage(): StorageAdapter<StatsData> {
+  if (!_statsStorage) {
+    if (process.env.DATABASE_URL) {
+      _statsStorage = defaultPostgresStorage<StatsData>(process.env.DATABASE_URL, "s:");
+    } else if (process.env.REDIS_URL) {
+      _statsStorage = defaultRedisStorage<StatsData>(process.env.REDIS_URL);
+    } else {
+      _statsStorage = new MemorySessionStorage<StatsData>();
+    }
+  }
+  return _statsStorage;
+}
+
+export async function incrementStat(key: string, field: keyof StatsData): Promise<void> {
+  const storage = getStatsStorage();
+  const current = (await storage.read(key)) ?? { totalStarts: 0, totalSales: 0 };
+  current[field]++;
+  await storage.write(key, current);
+}
