@@ -1,0 +1,112 @@
+[
+  {
+    "name": "/reminders with every_other_day cadence shows correct prompt",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "reminders:cadence:every_other_day" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your every-other-day reminder time: 09:00\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "18:30" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Reminder time set to 18:30 (every-other-day)."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Re-opening /reminders shows every-other-day cadence",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your every-other-day reminder time: 18:30\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/reminderoff cancels every-other-day reminder",
+    "steps": [
+      {
+        "send": { "text": "/reminderoff" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Daily reminders turned off. Send /reminders to schedule again."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Re-enable every-other-day from off state",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Reminders are currently turned off."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "reminders:cadence:every_other_day" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your every-other-day reminder time: 18:30\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "20:00" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Reminder time set to 20:00 (every-other-day)."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

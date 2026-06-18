@@ -1,5 +1,6 @@
 import { Queue, Worker } from "bullmq";
 import type { Api, RawApi } from "grammy";
+import { getReminderStorage } from "./storage.js";
 
 const REMINDER_QUEUE = "reminders";
 const REMINDER_PREFIX = "reminder";
@@ -10,10 +11,9 @@ export interface ReminderJobData {
   cadence: string;
 }
 
-function buildCron(time: string, cadence?: string): string {
+function buildCron(time: string, _cadence?: string): string {
   const [hours, minutes] = time.split(":");
-  const dayPart = cadence === "every_other_day" ? "*/2" : "*";
-  return `${minutes} ${hours} ${dayPart} * *`;
+  return `${minutes} ${hours} * * *`;
 }
 
 let _queue: Queue<ReminderJobData> | undefined;
@@ -61,18 +61,39 @@ export async function cancelReminder(userId: string): Promise<void> {
   }
 }
 
+const FORTY_SEVEN_HOURS_MS = 47 * 60 * 60 * 1000;
+
 export function startReminderWorker(botApi: Api<RawApi>): void {
   const redisUrl = process.env.REDIS_URL;
   if (!redisUrl) return;
   new Worker<ReminderJobData>(
     REMINDER_QUEUE,
     async (job) => {
-      const { userId, time } = job.data;
+      const { userId, time, cadence } = job.data;
       try {
-        await botApi.sendMessage(
-          Number(userId),
-          `⏰ Reminder! Time for your daily practice session.`,
-        );
+        if (cadence === "every_other_day") {
+          const reminderStorage = getReminderStorage();
+          const reminder = await reminderStorage.read(userId);
+          const lastRemindedAt = reminder?.lastRemindedAt;
+          const now = Date.now();
+          if (lastRemindedAt && now - lastRemindedAt < FORTY_SEVEN_HOURS_MS) {
+            return;
+          }
+          await reminderStorage.write(userId, {
+            time,
+            cadence,
+            lastRemindedAt: now,
+          });
+          await botApi.sendMessage(
+            Number(userId),
+            `⏰ Reminder! Time for your practice session.`,
+          );
+        } else {
+          await botApi.sendMessage(
+            Number(userId),
+            `⏰ Reminder! Time for your daily practice session.`,
+          );
+        }
       } catch (err) {
         console.error(`Failed to send reminder to ${userId}:`, err);
       }
