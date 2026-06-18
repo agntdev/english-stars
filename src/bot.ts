@@ -1,4 +1,5 @@
 import { createBot, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
+import { getStarsStorage } from "./storage.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
@@ -103,6 +104,28 @@ export function buildBot(token: string) {
       return;
     }
     await ctx.reply(`You said: ${text}`);
+  });
+
+  const storage = getStarsStorage();
+
+  bot.on("pre_checkout_query", async (ctx) => {
+    const pq = ctx.preCheckoutQuery;
+    if (pq.invoice_payload === "buy_stars_10" && pq.total_amount === 10) {
+      await ctx.answerPreCheckoutQuery(true);
+    } else {
+      await ctx.answerPreCheckoutQuery(false, "Unsupported invoice");
+    }
+  });
+
+  bot.on("message:successful_payment", async (ctx) => {
+    const payment = ctx.message.successful_payment;
+    if (payment.invoice_payload === "buy_stars_10") {
+      const userId = String(ctx.from.id);
+      const current = (await storage.read(userId)) ?? 0;
+      const newBalance = current + 10;
+      await storage.write(userId, newBalance);
+      await ctx.reply(`Payment received! You now have ${newBalance} stars.`);
+    }
   });
 
   bot.catch(async (err) => {
