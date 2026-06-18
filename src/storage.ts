@@ -1,6 +1,11 @@
 import type { StorageAdapter } from "grammy";
 import { MemorySessionStorage, defaultRedisStorage } from "./toolkit/index.js";
 
+export interface UserData {
+  stars: number;
+  unlocked: boolean;
+}
+
 let _starsStorage: StorageAdapter<number> | undefined;
 
 export function getStarsStorage(): StorageAdapter<number> {
@@ -12,4 +17,17 @@ export function getStarsStorage(): StorageAdapter<number> {
     }
   }
   return _starsStorage;
+}
+
+let _userDataStorage: StorageAdapter<UserData> | undefined;
+
+export function getUserDataStorage(): StorageAdapter<UserData> {
+  if (!_userDataStorage) {
+    if (process.env.REDIS_URL) {
+      _userDataStorage = defaultRedisStorage<UserData>(process.env.REDIS_URL);
+    } else {
+      _userDataStorage = new MemorySessionStorage<UserData>();
+    }
+  }
+  return _userDataStorage;
 }
