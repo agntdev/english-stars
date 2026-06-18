@@ -108,20 +108,21 @@ export interface QuizScoreEntry {
   at: string;
 }
 
-export interface QuizScoresData {
-  entries: QuizScoreEntry[];
+export interface AppendableStorage {
+  append(key: string, value: string): Promise<void>;
+  readAppendLog(key: string): Promise<string[]>;
 }
 
-let _quizScoreStorage: StorageAdapter<QuizScoresData> | undefined;
+let _quizScoreStorage: AppendableStorage | undefined;
 
-export function getQuizScoreStorage(): StorageAdapter<QuizScoresData> {
+export function getQuizScoreStorage(): AppendableStorage {
   if (!_quizScoreStorage) {
     if (process.env.DATABASE_URL) {
-      _quizScoreStorage = defaultPostgresStorage<QuizScoresData>(process.env.DATABASE_URL, "quiz:");
+      _quizScoreStorage = defaultPostgresStorage<unknown>(process.env.DATABASE_URL, "quiz:") as unknown as AppendableStorage;
     } else if (process.env.REDIS_URL) {
-      _quizScoreStorage = defaultRedisStorage<QuizScoresData>(process.env.REDIS_URL);
+      _quizScoreStorage = defaultRedisStorage<unknown>(process.env.REDIS_URL) as unknown as AppendableStorage;
     } else {
-      _quizScoreStorage = new MemorySessionStorage<QuizScoresData>();
+      _quizScoreStorage = new MemorySessionStorage<unknown>() as unknown as AppendableStorage;
     }
   }
   return _quizScoreStorage;
@@ -134,12 +135,16 @@ export async function saveQuizScore(
   total: number,
 ): Promise<void> {
   const storage = getQuizScoreStorage();
-  const current = (await storage.read(userId)) ?? { entries: [] };
-  current.entries.push({
+  await storage.append(userId, JSON.stringify({
     quizType,
     score,
     total,
     at: new Date().toISOString(),
-  });
-  await storage.write(userId, current);
+  }));
+}
+
+export async function getQuizScores(userId: string): Promise<QuizScoreEntry[]> {
+  const storage = getQuizScoreStorage();
+  const raw = await storage.readAppendLog(userId);
+  return raw.map((r) => JSON.parse(r) as QuizScoreEntry);
 }

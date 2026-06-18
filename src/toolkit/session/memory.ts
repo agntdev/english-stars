@@ -11,6 +11,7 @@ import type { StorageAdapter } from "grammy";
  */
 export class MemorySessionStorage<T> implements StorageAdapter<T> {
   private store = new Map<string, T>();
+  private appendLog = new Map<string, string[]>();
 
   read(key: string): T | undefined {
     return this.store.get(key);
@@ -30,5 +31,15 @@ export class MemorySessionStorage<T> implements StorageAdapter<T> {
 
   readAllKeys(): string[] {
     return [...this.store.keys()];
+  }
+
+  append(key: string, value: string): void {
+    const arr = this.appendLog.get(key) ?? [];
+    arr.push(value);
+    this.appendLog.set(key, arr);
+  }
+
+  readAppendLog(key: string): string[] {
+    return this.appendLog.get(key) ?? [];
   }
 }
