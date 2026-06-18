@@ -60,6 +60,7 @@ export type ReminderCadence = "daily" | "every_other_day" | "off";
 export interface ReminderData {
   time: string;
   cadence: ReminderCadence;
+  lastRemindedAt?: number;
 }
 
 let _reminderStorage: StorageAdapter<ReminderData> | undefined;
