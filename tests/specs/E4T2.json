@@ -1,0 +1,167 @@
+[
+  {
+    "name": "/typeword starts a type-the-word quiz with Q1",
+    "steps": [
+      {
+        "send": { "text": "/typeword" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nType your answer below:"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Correct answer to Q1 shows feedback and Q2",
+    "steps": [
+      {
+        "send": { "text": "/typeword" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "practice" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nYour answer: practice\n\n✅ Correct!"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⌨️ Type the Word — Question 2 of 4\n\nWhat leads to mastery?\n\nType your answer below:"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Incorrect answer shows correct answer and continues",
+    "steps": [
+      {
+        "send": { "text": "/typeword" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong answer" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nYour answer: wrong answer\n\n❌ Incorrect. The correct answer was: practice / practise"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⌨️ Type the Word — Question 2 of 4\n\nWhat leads to mastery?\n\nType your answer below:"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Completing all 4 questions shows final score",
+    "steps": [
+      {
+        "send": { "text": "/typeword" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "practice" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 2 of 4\n\nWhat leads to mastery?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "small steps" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 3 of 4\n\nHow often should you review past lessons?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "every week" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 4 of 4\n\nWhat beats intensity every time?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "consistency" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⌨️ Type the Word — Question 4 of 4\n\nWhat beats intensity every time?\n\nYour answer: consistency\n\n✅ Correct!"
+            }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "🎉 Type-the-word quiz complete! You scored 4/4."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "score reflects mix of correct and incorrect answers",
+    "steps": [
+      {
+        "send": { "text": "/typeword" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 1 of 4\n\nWhat should you do daily to improve quickly?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "practice" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 2 of 4\n\nWhat leads to mastery?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 3 of 4\n\nHow often should you review past lessons?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong again" },
+        "expect": [
+          { "method": "sendMessage" },
+          { "method": "sendMessage", "payload": { "text": "⌨️ Type the Word — Question 4 of 4\n\nWhat beats intensity every time?\n\nType your answer below:" } }
+        ]
+      },
+      {
+        "send": { "text": "wrong" },
+        "expect": [
+          { "method": "sendMessage" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "🎉 Type-the-word quiz complete! You scored 1/4."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
