@@ -6,6 +6,13 @@ export interface UserData {
   unlocked: boolean;
 }
 
+export interface QuizResult {
+  quizId: string;
+  score: number;
+  total: number;
+  completedAt: number;
+}
+
 let _starsStorage: StorageAdapter<number> | undefined;
 
 export function getStarsStorage(): StorageAdapter<number> {
@@ -30,4 +37,17 @@ export function getUserDataStorage(): StorageAdapter<UserData> {
     }
   }
   return _userDataStorage;
+}
+
+let _quizResultsStorage: StorageAdapter<QuizResult[]> | undefined;
+
+export function getQuizResultsStorage(): StorageAdapter<QuizResult[]> {
+  if (!_quizResultsStorage) {
+    if (process.env.REDIS_URL) {
+      _quizResultsStorage = defaultRedisStorage<QuizResult[]>(process.env.REDIS_URL);
+    } else {
+      _quizResultsStorage = new MemorySessionStorage<QuizResult[]>();
+    }
+  }
+  return _quizResultsStorage;
 }

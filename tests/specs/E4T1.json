@@ -1,0 +1,141 @@
+[
+  {
+    "name": "/practice starts a quiz with question 1",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "🎯 Practice Quiz — Question 1 of 4\n\nWhat should you do daily to improve quickly?",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Skip practice", "callback_data": "practice:answer:0:0" }],
+                  [{ "text": "Practice daily", "callback_data": "practice:answer:0:1" }],
+                  [{ "text": "Study once a month", "callback_data": "practice:answer:0:2" }],
+                  [{ "text": "Wait for motivation", "callback_data": "practice:answer:0:3" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "correct answer shows feedback and next question",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "✅ Correct!\n\n🎯 Practice Quiz — Question 2 of 4\n\nAccording to the lessons, what leads to mastery?",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Big leaps", "callback_data": "practice:answer:1:0" }],
+                  [{ "text": "Natural talent", "callback_data": "practice:answer:1:1" }],
+                  [{ "text": "Small steps", "callback_data": "practice:answer:1:2" }],
+                  [{ "text": "Studying all night", "callback_data": "practice:answer:1:3" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "incorrect answer shows feedback with correct answer and next question",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "❌ Incorrect. The right answer was: Practice daily\n\n🎯 Practice Quiz — Question 2 of 4\n\nAccording to the lessons, what leads to mastery?"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "complete quiz shows final result with feedback on last answer",
+    "steps": [
+      {
+        "send": { "text": "/practice" },
+        "expect": [
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:0:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:1:2" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:2:2" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" }
+        ]
+      },
+      {
+        "send": { "callback": "practice:answer:3:2" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "✅ Correct!\n\n🎯 Quiz Complete!\n\nScore: 3/4 (75%)\n\nGreat job! 🌟"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "menu:practice callback starts a quiz",
+    "steps": [
+      {
+        "send": { "callback": "menu:practice" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "🎯 Practice Quiz — Question 1 of 4\n\nWhat should you do daily to improve quickly?"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
