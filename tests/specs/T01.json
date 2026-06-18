@@ -1,0 +1,13 @@
+[
+  {
+    "name": "text message echoes back",
+    "steps": [
+      {
+        "send": { "text": "Hello bot" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "You said: Hello bot" } }
+        ]
+      }
+    ]
+  }
+]
