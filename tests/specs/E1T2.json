@@ -1,0 +1,140 @@
+[
+  {
+    "name": "pre_checkout_query validates 'buy_stars_10' invoice",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "pre_checkout_query": {
+              "id": "pq-1",
+              "from": { "id": 1, "is_bot": false, "first_name": "Test" },
+              "currency": "XTR",
+              "total_amount": 10,
+              "invoice_payload": "buy_stars_10"
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "answerPreCheckoutQuery",
+            "payload": { "ok": true }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "pre_checkout_query rejects unknown invoice payload",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "pre_checkout_query": {
+              "id": "pq-2",
+              "from": { "id": 1, "is_bot": false, "first_name": "Test" },
+              "currency": "XTR",
+              "total_amount": 50,
+              "invoice_payload": "unknown_product"
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "answerPreCheckoutQuery",
+            "payload": { "ok": false, "error_message": "Unsupported invoice" }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "successful payment for 10 stars credits user and confirms",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": { "id": 1, "type": "private" },
+              "from": { "id": 1, "is_bot": false, "first_name": "Test" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "charge-1",
+                "provider_payment_charge_id": "provider-charge-1"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 10 stars." }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "consecutive payments accumulate stars for the same user",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": { "id": 1, "type": "private" },
+              "from": { "id": 2, "is_bot": false, "first_name": "Test2" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "charge-a",
+                "provider_payment_charge_id": "provider-a"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 10 stars." }
+          }
+        ]
+      },
+      {
+        "send": {
+          "update": {
+            "update_id": 2,
+            "message": {
+              "message_id": 2,
+              "date": 0,
+              "chat": { "id": 1, "type": "private" },
+              "from": { "id": 2, "is_bot": false, "first_name": "Test2" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "charge-b",
+                "provider_payment_charge_id": "provider-b"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 20 stars." }
+          }
+        ]
+      }
+    ]
+  }
+]
