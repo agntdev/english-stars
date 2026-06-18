@@ -1,0 +1,144 @@
+[
+  {
+    "name": "/words command shows word card 1 of 6 with Play audio and Next button",
+    "steps": [
+      {
+        "send": { "text": "/words" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Word 1 of 6\n\n*Ephemeral*\n\n_Part of speech:_ adjective\n\n_Definition:_ Lasting for a very short time.\n\n_Example:_ \"The ephemeral beauty of cherry blossoms makes them even more precious.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "🔊 Play audio", "callback_data": "word:audio:Ephemeral" },
+                    { "text": "Next →", "callback_data": "word:next:1" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Next button navigates to word 2 with Prev and Play audio and Next",
+    "steps": [
+      {
+        "send": { "callback": "word:next:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Word 2 of 6\n\n*Ubiquitous*\n\n_Part of speech:_ adjective\n\n_Definition:_ Present, appearing, or found everywhere.\n\n_Example:_ \"Smartphones have become ubiquitous in modern society.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "← Prev", "callback_data": "word:prev:0" },
+                    { "text": "🔊 Play audio", "callback_data": "word:audio:Ubiquitous" },
+                    { "text": "Next →", "callback_data": "word:next:2" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Prev button navigates back to word 1",
+    "steps": [
+      {
+        "send": { "callback": "word:prev:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Word 1 of 6\n\n*Ephemeral*\n\n_Part of speech:_ adjective\n\n_Definition:_ Lasting for a very short time.\n\n_Example:_ \"The ephemeral beauty of cherry blossoms makes them even more precious.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "🔊 Play audio", "callback_data": "word:audio:Ephemeral" },
+                    { "text": "Next →", "callback_data": "word:next:1" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Play audio button sends pronunciation guide",
+    "steps": [
+      {
+        "send": { "callback": "word:audio:Ephemeral" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "🔊 Pronunciation for *Ephemeral*: /ih-FEM-er-ul/"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Last word shows only Prev and Play audio",
+    "steps": [
+      {
+        "send": { "callback": "word:next:5" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📝 Word 6 of 6\n\n*Candid*\n\n_Part of speech:_ adjective\n\n_Definition:_ Truthful and straightforward; frank.\n\n_Example:_ \"I appreciate your candid feedback about my presentation.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "← Prev", "callback_data": "word:prev:4" },
+                    { "text": "🔊 Play audio", "callback_data": "word:audio:Candid" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "main menu Words callback opens word 1",
+    "steps": [
+      {
+        "send": { "callback": "menu:words" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📝 Word 1 of 6\n\n*Ephemeral*\n\n_Part of speech:_ adjective\n\n_Definition:_ Lasting for a very short time.\n\n_Example:_ \"The ephemeral beauty of cherry blossoms makes them even more precious.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "🔊 Play audio", "callback_data": "word:audio:Ephemeral" },
+                    { "text": "Next →", "callback_data": "word:next:1" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

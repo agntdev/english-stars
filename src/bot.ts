@@ -1,17 +1,20 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
 import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
 import { scheduleReminder, cancelReminder } from "./reminder.js";
+import { getWord, getTotalWords, formatWordCard, wordCardKeyboard, wordPronunciationGuide } from "./words.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
 // persistent storage (see AGENTS.md).
 export interface Session {
   lessonPage?: number;
+  wordPage?: number;
   awaitingReminderTime?: boolean;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
   { text: "📚 Micro-Lessons", data: "menu:lesson" },
+  { text: "📝 Words", data: "menu:words" },
   { text: "🎯 Practice", data: "menu:practice" },
   { text: "⭐ Buy Stars", data: "menu:buy" },
   { text: "⏰ Reminders", data: "menu:reminders" },
@@ -35,7 +38,7 @@ const LOCALE_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard(
   LOCALES.map((loc) => [inlineButton(loc.name, `locale:set:${loc.code}`)]),
 );
 
-const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale"]);
+const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale", "words"]);
 
 async function notifyAdmin(bot: ReturnType<typeof createBot<Session>>, message: string) {
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -97,6 +100,7 @@ export function buildBot(token: string) {
       "/start — Main menu\n" +
       "/buy — Buy Stars\n" +
       "/lesson — Micro-lessons\n" +
+      "/words — Word cards\n" +
       "/practice — Practice quizzes\n" +
       "/reminders — Daily reminders\n" +
       "/reminderoff — Turn off reminders\n" +
@@ -109,6 +113,16 @@ export function buildBot(token: string) {
   bot.command("lesson", async (ctx) => {
     ctx.session.lessonPage = 0;
     await ctx.reply(lessonMessage(0), { reply_markup: lessonKeyboard(0) });
+  });
+
+  bot.command("words", async (ctx) => {
+    ctx.session.wordPage = 0;
+    const word = getWord(0);
+    if (!word) {
+      await ctx.reply("No words available yet.");
+      return;
+    }
+    await ctx.reply(formatWordCard(word, 0, getTotalWords()), { reply_markup: wordCardKeyboard(0), parse_mode: "Markdown" });
   });
 
   bot.command("buy", async (ctx) => {
@@ -164,7 +178,7 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
+    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/words — Word cards\n/practice — Practice quizzes\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
   });
 
   bot.callbackQuery("menu:buy", async (ctx) => {
@@ -184,6 +198,34 @@ export function buildBot(token: string) {
     if (isNaN(page) || page < 0 || page >= MICRO_LESSONS.length) return;
     ctx.session.lessonPage = page;
     await ctx.editMessageText(lessonMessage(page), { reply_markup: lessonKeyboard(page) });
+  });
+
+  bot.callbackQuery("menu:words", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    ctx.session.wordPage = 0;
+    const word = getWord(0);
+    if (!word) {
+      await ctx.reply("No words available yet.");
+      return;
+    }
+    await ctx.reply(formatWordCard(word, 0, getTotalWords()), { reply_markup: wordCardKeyboard(0), parse_mode: "Markdown" });
+  });
+
+  bot.callbackQuery(/^word:(next|prev):(\d+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const index = parseInt(ctx.match[2], 10);
+    const total = getTotalWords();
+    if (isNaN(index) || index < 0 || index >= total) return;
+    ctx.session.wordPage = index;
+    const word = getWord(index);
+    if (!word) return;
+    await ctx.editMessageText(formatWordCard(word, index, total), { reply_markup: wordCardKeyboard(index), parse_mode: "Markdown" });
+  });
+
+  bot.callbackQuery(/^word:audio:(.+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const word = ctx.match[1];
+    await ctx.reply(wordPronunciationGuide(word), { parse_mode: "Markdown" });
   });
 
   bot.callbackQuery("menu:practice", async (ctx) => {
