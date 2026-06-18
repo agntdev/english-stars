@@ -1,5 +1,5 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
+import { getLocaleStorage, getReminderStorage, getUserDataStorage, type ReminderCadence } from "./storage.js";
 import { scheduleReminder, cancelReminder } from "./reminder.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
@@ -36,6 +36,20 @@ const LOCALES: ReadonlyArray<{ code: string; name: string }> = [
 const LOCALE_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard(
   LOCALES.map((loc) => [inlineButton(loc.name, `locale:set:${loc.code}`)]),
 );
+
+const CADENCE_LABELS: Record<ReminderCadence, string> = {
+  daily: "📅 Daily",
+  "every-other-day": "📅 Every Other Day",
+  off: "🔕 Off",
+};
+
+function cadenceKeyboard(): InlineKeyboardMarkup {
+  const cadences: ReminderCadence[] = ["daily", "every-other-day", "off"];
+  const rows: InlineButton[][] = cadences.map((c) =>
+    [inlineButton(CADENCE_LABELS[c], `reminder:cadence:${c}`)]
+  );
+  return inlineKeyboard(rows);
+}
 
 const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale"]);
 
@@ -126,6 +140,19 @@ function lessonKeyboard(page: number): InlineKeyboardMarkup {
   return menuKeyboard(row, row.length);
 }
 
+function reminderSettingsMessage(cadence: ReminderCadence, time: string, isDefault: boolean): string {
+  const cadenceLabel = CADENCE_LABELS[cadence];
+  const defaultNote = isDefault ? " (default)" : "";
+  const lines = [
+    "⏰ Reminder Settings",
+    `Cadence: ${cadenceLabel}`,
+    `Time: ${time}${defaultNote}`,
+    "",
+    "Select a cadence or send a time in HH:MM format to change.",
+  ];
+  return lines.join("\n");
+}
+
 /**
  * buildBot — assembles the bot and registers every handler, but does NOT start
  * it. Shared by the runtime entry (src/index.ts) and the Tests-gate harness
@@ -148,7 +175,7 @@ export function buildBot(token: string) {
       "/buy — Buy Stars\n" +
       "/lesson — Micro-lessons\n" +
       "/practice — Practice quizzes\n" +
-      "/reminders — Daily reminders\n" +
+      "/reminders — Configure reminder cadence\n" +
       "/reminderoff — Turn off reminders\n" +
       "/stats — View your stats\n" +
       "/locale — Set language\n" +
@@ -195,10 +222,12 @@ export function buildBot(token: string) {
     const reminderStorage = getReminderStorage();
     const current = await reminderStorage.read(userId);
     const currentTime = current?.time ?? "09:00";
-    const defaultNote = current ? "" : " (default)";
+    const currentCadence: ReminderCadence = current?.cadence ?? "daily";
+    const isDefault = !current;
     ctx.session.awaitingReminderTime = true;
     await ctx.reply(
-      `Your daily reminder time: ${currentTime}${defaultNote}\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30).`,
+      reminderSettingsMessage(currentCadence, currentTime, isDefault),
+      { reply_markup: cadenceKeyboard() },
     );
   });
 
@@ -211,14 +240,14 @@ export function buildBot(token: string) {
       await ctx.reply("No reminder is currently scheduled.");
       return;
     }
-    await reminderStorage.delete(userId);
+    await reminderStorage.write(userId, { time: current.time, cadence: "off" });
     await cancelReminder(userId);
     await ctx.reply("Daily reminders turned off. Send /reminders to schedule again.");
   });
 
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
+    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Configure reminder cadence\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
   });
 
   bot.callbackQuery("menu:buy", async (ctx) => {
@@ -281,7 +310,44 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:reminders", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Use /reminders to set up daily practice reminders at your preferred time. Use /reminderoff to disable them.");
+    if (!ctx.from) return;
+    const userId = String(ctx.from.id);
+    const reminderStorage = getReminderStorage();
+    const current = await reminderStorage.read(userId);
+    const currentTime = current?.time ?? "09:00";
+    const currentCadence: ReminderCadence = current?.cadence ?? "daily";
+    const isDefault = !current;
+    ctx.session.awaitingReminderTime = true;
+    await ctx.reply(
+      reminderSettingsMessage(currentCadence, currentTime, isDefault),
+      { reply_markup: cadenceKeyboard() },
+    );
+  });
+
+  bot.callbackQuery(/^reminder:cadence:(.+)$/, async (ctx) => {
+    const cadence = ctx.match[1] as ReminderCadence;
+    if (!CADENCE_LABELS[cadence]) {
+      await ctx.answerCallbackQuery("Unknown cadence.");
+      return;
+    }
+    await ctx.answerCallbackQuery();
+    const userId = String(ctx.from.id);
+    const reminderStorage = getReminderStorage();
+    const current = await reminderStorage.read(userId);
+    const time = current?.time ?? "09:00";
+    if (cadence === "off") {
+      await reminderStorage.delete(userId);
+      await cancelReminder(userId);
+      await ctx.editMessageText(
+        `Reminders turned off.\n\nCadence set to: ${CADENCE_LABELS[cadence]}`,
+      );
+    } else {
+      await reminderStorage.write(userId, { time, cadence });
+      await scheduleReminder(userId, time, cadence);
+      await ctx.editMessageText(
+        `Cadence updated to: ${CADENCE_LABELS[cadence]}\nTime: ${time}`,
+      );
+    }
   });
 
   bot.callbackQuery("menu:stats", async (ctx) => {
@@ -320,8 +386,10 @@ export function buildBot(token: string) {
         const time = match[0];
         const userId = String(ctx.from.id);
         const reminderStorage = getReminderStorage();
-        await reminderStorage.write(userId, { time });
-        await scheduleReminder(userId, time);
+        const current = await reminderStorage.read(userId);
+        const cadence: ReminderCadence = current?.cadence ?? "daily";
+        await reminderStorage.write(userId, { time, cadence });
+        await scheduleReminder(userId, time, cadence);
         await ctx.reply(`Reminder time set to ${time}.`);
       } else {
         await ctx.reply(`"${text}" is not a valid 24-hour time (HH:MM). Send /reminders to try again.`);

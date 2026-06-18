@@ -1,0 +1,173 @@
+[
+  {
+    "name": "/reminders shows default settings with cadence keyboard",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⏰ Reminder Settings\nCadence: 📅 Daily\nTime: 09:00 (default)\n\nSelect a cadence or send a time in HH:MM format to change."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "setting reminder time via text input",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⏰ Reminder Settings\nCadence: 📅 Daily\nTime: 09:00 (default)\n\nSelect a cadence or send a time in HH:MM format to change."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "14:30" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Reminder time set to 14:30." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⏰ Reminder Settings\nCadence: 📅 Daily\nTime: 14:30\n\nSelect a cadence or send a time in HH:MM format to change."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "changing cadence to every-other-day",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⏰ Reminder Settings\nCadence: 📅 Daily\nTime: 09:00 (default)\n\nSelect a cadence or send a time in HH:MM format to change."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "reminder:cadence:every-other-day", "messageId": 1001 },
+        "expect": [
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "Cadence updated to: 📅 Every Other Day\nTime: 09:00"
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⏰ Reminder Settings\nCadence: 📅 Every Other Day\nTime: 09:00\n\nSelect a cadence or send a time in HH:MM format to change."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "changing cadence to off turns off reminders",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⏰ Reminder Settings\nCadence: 📅 Daily\nTime: 09:00 (default)\n\nSelect a cadence or send a time in HH:MM format to change."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "reminder:cadence:off", "messageId": 1001 },
+        "expect": [
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "Reminders turned off.\n\nCadence set to: 🔕 Off"
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⏰ Reminder Settings\nCadence: 📅 Daily\nTime: 09:00 (default)\n\nSelect a cadence or send a time in HH:MM format to change."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "menu:reminders callback shows reminder settings",
+    "steps": [
+      {
+        "send": { "callback": "menu:reminders", "messageId": 1 },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⏰ Reminder Settings\nCadence: 📅 Daily\nTime: 09:00 (default)\n\nSelect a cadence or send a time in HH:MM format to change."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "invalid time input shows error",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "⏰ Reminder Settings\nCadence: 📅 Daily\nTime: 09:00 (default)\n\nSelect a cadence or send a time in HH:MM format to change."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "not-a-time" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "\"not-a-time\" is not a valid 24-hour time (HH:MM). Send /reminders to try again."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

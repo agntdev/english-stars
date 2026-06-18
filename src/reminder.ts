@@ -1,5 +1,6 @@
 import { Queue, Worker } from "bullmq";
 import type { Api, RawApi } from "grammy";
+import type { ReminderCadence } from "./storage.js";
 
 const REMINDER_QUEUE = "reminders";
 const REMINDER_PREFIX = "reminder";
@@ -7,10 +8,14 @@ const REMINDER_PREFIX = "reminder";
 export interface ReminderJobData {
   userId: string;
   time: string;
+  cadence: ReminderCadence;
 }
 
-function buildCron(time: string): string {
+function buildCron(time: string, cadence: ReminderCadence): string {
   const [hours, minutes] = time.split(":");
+  if (cadence === "every-other-day") {
+    return `${minutes} ${hours} */2 * *`;
+  }
   return `${minutes} ${hours} * * *`;
 }
 
@@ -28,22 +33,23 @@ function getQueue(): Queue<ReminderJobData> | undefined {
   return _queue;
 }
 
-export async function scheduleReminder(userId: string, time: string): Promise<void> {
+export async function scheduleReminder(userId: string, time: string, cadence: ReminderCadence): Promise<void> {
   const queue = getQueue();
   if (!queue) return;
   const schedulerId = `reminder:${userId}`;
-  const cron = buildCron(time);
   try {
     await queue.removeJobScheduler(schedulerId);
   } catch {
     // No existing scheduler is fine
   }
+  if (cadence === "off") return;
+  const cron = buildCron(time, cadence);
   await queue.upsertJobScheduler(
     schedulerId,
     { pattern: cron },
     {
       name: "send-reminder",
-      data: { userId, time },
+      data: { userId, time, cadence },
     },
   );
 }
