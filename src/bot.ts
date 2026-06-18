@@ -1,11 +1,12 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getLocaleStorage, getUserDataStorage } from "./storage.js";
+import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
 // persistent storage (see AGENTS.md).
 export interface Session {
   lessonPage?: number;
+  awaitingReminderTime?: boolean;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
@@ -121,6 +122,19 @@ export function buildBot(token: string) {
     );
   });
 
+  bot.command("reminders", async (ctx) => {
+    if (!ctx.from) return;
+    const userId = String(ctx.from.id);
+    const reminderStorage = getReminderStorage();
+    const current = await reminderStorage.read(userId);
+    const currentTime = current?.time ?? "09:00";
+    const defaultNote = current ? "" : " (default)";
+    ctx.session.awaitingReminderTime = true;
+    await ctx.reply(
+      `Your daily reminder time: ${currentTime}${defaultNote}\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30).`,
+    );
+  });
+
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
     await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
@@ -180,6 +194,21 @@ export function buildBot(token: string) {
       const cmd = text.split(" ")[0].slice(1).split("@")[0].toLowerCase();
       if (!KNOWN_COMMANDS.has(cmd)) {
         await ctx.reply("Unknown command. Use /help to see available commands.");
+      }
+      return;
+    }
+    if (ctx.session.awaitingReminderTime && ctx.from) {
+      ctx.session.awaitingReminderTime = false;
+      const timeRe = /^([01]\d|2[0-3]):([0-5]\d)$/;
+      const match = timeRe.exec(text.trim());
+      if (match) {
+        const time = match[0];
+        const userId = String(ctx.from.id);
+        const reminderStorage = getReminderStorage();
+        await reminderStorage.write(userId, { time });
+        await ctx.reply(`Reminder time set to ${time}.`);
+      } else {
+        await ctx.reply(`"${text}" is not a valid 24-hour time (HH:MM). Send /reminders to try again.`);
       }
       return;
     }
