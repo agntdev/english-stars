@@ -1,0 +1,43 @@
+[
+  {
+    "name": "/locale shows default English with language selection keyboard",
+    "steps": [
+      {
+        "send": { "text": "/locale" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your current language: \uD83C\uDDEC\uD83C\uDDE7 English\n\nChoose a language:",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "\uD83C\uDDEC\uD83C\uDDE7 English", "callback_data": "locale:set:en" }],
+                  [{ "text": "\uD83C\uDDEA\uD83C\uDDF8 Español", "callback_data": "locale:set:es" }],
+                  [{ "text": "\uD83C\uDDEB\uD83C\uDDF7 Français", "callback_data": "locale:set:fr" }],
+                  [{ "text": "\uD83C\uDDE9\uD83C\uDDEA Deutsch", "callback_data": "locale:set:de" }],
+                  [{ "text": "\uD83C\uDDF7\uD83C\uDDFA Русский", "callback_data": "locale:set:ru" }],
+                  [{ "text": "\uD83C\uDDE8\uD83C\uDDF3 中文", "callback_data": "locale:set:zh" }],
+                  [{ "text": "\uD83C\uDDF8\uD83C\uDDE6 العربية", "callback_data": "locale:set:ar" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "select locale via callback stores preference and confirms",
+    "steps": [
+      {
+        "send": { "callback": "locale:set:es" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Language set to \uD83C\uDDEA\uD83C\uDDF8 Español." }
+          }
+        ]
+      }
+    ]
+  }
+]

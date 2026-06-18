@@ -31,3 +31,20 @@ export function getUserDataStorage(): StorageAdapter<UserData> {
   }
   return _userDataStorage;
 }
+
+export interface LocaleData {
+  locale: string;
+}
+
+let _localeStorage: StorageAdapter<LocaleData> | undefined;
+
+export function getLocaleStorage(): StorageAdapter<LocaleData> {
+  if (!_localeStorage) {
+    if (process.env.REDIS_URL) {
+      _localeStorage = defaultRedisStorage<LocaleData>(process.env.REDIS_URL);
+    } else {
+      _localeStorage = new MemorySessionStorage<LocaleData>();
+    }
+  }
+  return _localeStorage;
+}
