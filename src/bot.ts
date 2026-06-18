@@ -1,4 +1,4 @@
-import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
+import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
 import { getLocaleStorage, getReminderStorage, getUserDataStorage } from "./storage.js";
 import { scheduleReminder, cancelReminder } from "./reminder.js";
 
@@ -8,6 +8,8 @@ import { scheduleReminder, cancelReminder } from "./reminder.js";
 export interface Session {
   lessonPage?: number;
   awaitingReminderTime?: boolean;
+  quizQuestion?: number;
+  quizScore?: number;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
@@ -64,6 +66,54 @@ function lessonMessage(page: number): string {
   return `📖 Lesson ${page + 1} of ${MICRO_LESSONS.length}\n\n${lesson}`;
 }
 
+interface QuizQuestion {
+  text: string;
+  options: string[];
+  correct: number;
+}
+
+const QUIZ_QUESTIONS: readonly QuizQuestion[] = [
+  {
+    text: "According to Micro-Lesson 1, what improves your skills quickly?",
+    options: ["Daily practice", "Watching videos", "Reading books"],
+    correct: 0,
+  },
+  {
+    text: "What leads to mastery according to Micro-Lesson 2?",
+    options: ["Big breakthroughs", "Small steps", "Working alone"],
+    correct: 1,
+  },
+  {
+    text: "How often should you review past lessons?",
+    options: ["Every day", "Every week", "Every month"],
+    correct: 1,
+  },
+  {
+    text: "What beats intensity every time?",
+    options: ["Speed", "Consistency", "Motivation"],
+    correct: 1,
+  },
+];
+
+function quizMessage(questionIndex: number): string {
+  const q = QUIZ_QUESTIONS[questionIndex];
+  return `📝 Quiz — Question ${questionIndex + 1} of ${QUIZ_QUESTIONS.length}\n\n${q.text}`;
+}
+
+function quizKeyboard(questionIndex: number): InlineKeyboardMarkup {
+  const q = QUIZ_QUESTIONS[questionIndex];
+  const rows: InlineButton[][] = q.options.map((opt, i) =>
+    [inlineButton(opt, `practice:answer:${questionIndex}:${i}`)]
+  );
+  return inlineKeyboard(rows);
+}
+
+function startQuiz(ctx: { session: Session; reply: (...args: any[]) => any }) {
+  ctx.session.quizQuestion = 0;
+  ctx.session.quizScore = 0;
+  return ctx.reply(quizMessage(0), { reply_markup: quizKeyboard(0) });
+}
+
 function lessonKeyboard(page: number): InlineKeyboardMarkup {
   const total = MICRO_LESSONS.length;
   const row: Array<{ text: string; data: string }> = [];
@@ -109,6 +159,10 @@ export function buildBot(token: string) {
   bot.command("lesson", async (ctx) => {
     ctx.session.lessonPage = 0;
     await ctx.reply(lessonMessage(0), { reply_markup: lessonKeyboard(0) });
+  });
+
+  bot.command("practice", async (ctx) => {
+    await startQuiz(ctx);
   });
 
   bot.command("buy", async (ctx) => {
@@ -186,9 +240,43 @@ export function buildBot(token: string) {
     await ctx.editMessageText(lessonMessage(page), { reply_markup: lessonKeyboard(page) });
   });
 
+  bot.callbackQuery(/^practice:answer:(\d+):(\d+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const questionIndex = parseInt(ctx.match[1], 10);
+    const choiceIndex = parseInt(ctx.match[2], 10);
+    if (isNaN(questionIndex) || isNaN(choiceIndex)) return;
+    if (questionIndex !== ctx.session.quizQuestion) return;
+    if (questionIndex >= QUIZ_QUESTIONS.length) return;
+
+    const q = QUIZ_QUESTIONS[questionIndex];
+    const correct = choiceIndex === q.correct;
+    if (correct) {
+      ctx.session.quizScore = (ctx.session.quizScore ?? 0) + 1;
+    }
+
+    const feedback = correct
+      ? "✅ Correct!"
+      : `❌ Incorrect. The correct answer was: ${q.options[q.correct]}`;
+    await ctx.editMessageText(
+      `${quizMessage(questionIndex)}\n\n${feedback}`,
+    );
+
+    const nextIndex = questionIndex + 1;
+    if (nextIndex < QUIZ_QUESTIONS.length) {
+      ctx.session.quizQuestion = nextIndex;
+      await ctx.reply(quizMessage(nextIndex), { reply_markup: quizKeyboard(nextIndex) });
+    } else {
+      const score = ctx.session.quizScore ?? 0;
+      const total = QUIZ_QUESTIONS.length;
+      await ctx.reply(`🎉 Quiz complete! You scored ${score}/${total}.`);
+      ctx.session.quizQuestion = undefined;
+      ctx.session.quizScore = undefined;
+    }
+  });
+
   bot.callbackQuery("menu:practice", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Use /practice to test your knowledge with interactive quizzes.");
+    await startQuiz(ctx);
   });
 
   bot.callbackQuery("menu:reminders", async (ctx) => {
