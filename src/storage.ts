@@ -81,6 +81,7 @@ export function getReminderStorage(): StorageAdapter<ReminderData> {
 export interface StatsData {
   totalStarts: number;
   totalSales: number;
+  activeUsers: number;
 }
 
 let _statsStorage: StorageAdapter<StatsData> | undefined;
@@ -100,9 +101,24 @@ export function getStatsStorage(): StorageAdapter<StatsData> {
 
 export async function incrementStat(key: string, field: keyof StatsData): Promise<void> {
   const storage = getStatsStorage();
-  const current = (await storage.read(key)) ?? { totalStarts: 0, totalSales: 0 };
+  const current = (await storage.read(key)) ?? { totalStarts: 0, totalSales: 0, activeUsers: 0 };
   current[field]++;
   await storage.write(key, current);
+}
+
+export async function recordActiveUser(userId: string): Promise<void> {
+  const storage = getStatsStorage();
+  const raw = storage as unknown as StorageAdapter<unknown>;
+  const activeSetKey = "active_set";
+  const existing = (await raw.read(activeSetKey)) as string[] | undefined;
+  const ids = existing ?? [];
+  if (!ids.includes(userId)) {
+    ids.push(userId);
+    await raw.write(activeSetKey, ids);
+    const stats = (await storage.read("global")) ?? { totalStarts: 0, totalSales: 0, activeUsers: 0 };
+    stats.activeUsers = ids.length;
+    await storage.write("global", stats);
+  }
 }
 
 export interface QuizScoreEntry {
