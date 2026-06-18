@@ -7,6 +7,7 @@ export interface PgLike {
 }
 
 const TABLE_NAME = "kv_store";
+const LOG_TABLE_NAME = "kv_log";
 
 export class PostgresStorage<T> implements StorageAdapter<T> {
   private tablePromise: Promise<void> | null = null;
@@ -27,6 +28,11 @@ export class PostgresStorage<T> implements StorageAdapter<T> {
       this.tablePromise = this.pool
         .query(
           `CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (key TEXT PRIMARY KEY, value JSONB NOT NULL)`,
+        )
+        .then(() =>
+          this.pool.query(
+            `CREATE TABLE IF NOT EXISTS ${LOG_TABLE_NAME} (key TEXT NOT NULL, value JSONB NOT NULL, seq BIGSERIAL PRIMARY KEY)`,
+          ),
         )
         .then(() => {
           this.tableReady = true;
@@ -78,6 +84,23 @@ export class PostgresStorage<T> implements StorageAdapter<T> {
     for (const row of result.rows) {
       yield (row.key as string).slice(this.prefix.length);
     }
+  }
+
+  async append(key: string, value: string): Promise<void> {
+    await this.ensureTable();
+    await this.pool.query(
+      `INSERT INTO ${LOG_TABLE_NAME} (key, value) VALUES ($1, $2)`,
+      [this.k(key), value],
+    );
+  }
+
+  async readAppendLog(key: string): Promise<string[]> {
+    await this.ensureTable();
+    const result = await this.pool.query(
+      `SELECT value FROM ${LOG_TABLE_NAME} WHERE key = $1 ORDER BY seq`,
+      [this.k(key)],
+    );
+    return result.rows.map((r) => r.value as string);
   }
 }
 

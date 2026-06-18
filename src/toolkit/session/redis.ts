@@ -20,6 +20,8 @@ export interface RedisLike {
   set(key: string, value: string): Promise<unknown>;
   del(key: string): Promise<unknown>;
   keys(pattern: string): Promise<string[]>;
+  rpush(key: string, ...values: string[]): Promise<number>;
+  lrange(key: string, start: number, stop: number): Promise<string[]>;
 }
 
 /**
@@ -63,6 +65,14 @@ export class RedisSessionStorage<T> implements StorageAdapter<T> {
   async *readAllKeys(): AsyncIterableIterator<string> {
     const keys = await this.client.keys(this.prefix + "*");
     for (const k of keys) yield k.slice(this.prefix.length);
+  }
+
+  async append(key: string, value: string): Promise<void> {
+    await this.client.rpush(this.k(key), value);
+  }
+
+  async readAppendLog(key: string): Promise<string[]> {
+    return this.client.lrange(this.k(key), 0, -1);
   }
 }
 
