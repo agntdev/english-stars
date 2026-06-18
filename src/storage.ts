@@ -54,3 +54,22 @@ export function getLocaleStorage(): StorageAdapter<LocaleData> {
   }
   return _localeStorage;
 }
+
+export interface ReminderData {
+  time: string;
+}
+
+let _reminderStorage: StorageAdapter<ReminderData> | undefined;
+
+export function getReminderStorage(): StorageAdapter<ReminderData> {
+  if (!_reminderStorage) {
+    if (process.env.DATABASE_URL) {
+      _reminderStorage = defaultPostgresStorage<ReminderData>(process.env.DATABASE_URL, "reminder:");
+    } else if (process.env.REDIS_URL) {
+      _reminderStorage = defaultRedisStorage<ReminderData>(process.env.REDIS_URL);
+    } else {
+      _reminderStorage = new MemorySessionStorage<ReminderData>();
+    }
+  }
+  return _reminderStorage;
+}

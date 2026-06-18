@@ -1,0 +1,110 @@
+[
+  {
+    "name": "/reminders shows default time and prompts for input",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "user sets reminder time via text input",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "14:30" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Reminder time set to 14:30."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "invalid time format prompts retry",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "not a time" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "\"not a time\" is not a valid 24-hour time (HH:MM). Send /reminders to try again."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/reminders shows previously stored time",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "18:00" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Reminder time set to 18:00."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 18:00\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
