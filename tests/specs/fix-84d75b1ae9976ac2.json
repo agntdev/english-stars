@@ -1,0 +1,45 @@
+[
+  {
+    "name": "/stats for non-admin user shows personal stats (unchanged after active-users addition)",
+    "steps": [
+      {
+        "send": { "text": "/stats" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📊 Your Stats\n\n⭐ Stars: 0\n🔒 Account: Not unlocked\n\nUse /buy to purchase stars and unlock your account."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/start records active user (storage side-effect) and /stats still shows non-admin view",
+    "steps": [
+      {
+        "send": { "text": "/start" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:"
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/stats" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📊 Your Stats\n\n⭐ Stars: 0\n🔒 Account: Not unlocked\n\nUse /buy to purchase stars and unlock your account."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

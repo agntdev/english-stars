@@ -1,5 +1,5 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getLocaleStorage, getReminderStorage, getStatsStorage, getUserDataStorage, incrementStat, saveQuizScore } from "./storage.js";
+import { getLocaleStorage, getReminderStorage, getStatsStorage, getUserDataStorage, incrementStat, recordActiveUser, saveQuizScore } from "./storage.js";
 import { scheduleReminder, cancelReminder } from "./reminder.js";
 import { generateTypeWordQuiz, checkTypeWordAnswer } from "./quiz.js";
 
@@ -146,6 +146,7 @@ export function buildBot(token: string) {
   bot.command("start", async (ctx) => {
     await ctx.reply(welcomeText(), { reply_markup: MAIN_MENU_KEYBOARD });
     await incrementStat("global", "totalStarts");
+    if (ctx.from) await recordActiveUser(String(ctx.from.id));
   });
 
   bot.command("help", async (ctx) => {
@@ -267,9 +268,10 @@ export function buildBot(token: string) {
     const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
     if (adminChatId && String(ctx.from.id) === adminChatId) {
       const statsStorage = getStatsStorage();
-      const stats = (await statsStorage.read("global")) ?? { totalStarts: 0, totalSales: 0 };
+      const stats = (await statsStorage.read("global")) ?? { totalStarts: 0, totalSales: 0, activeUsers: 0 };
       await ctx.reply(
         "📊 Admin Stats\n\n" +
+        `👤 Active users: ${stats.activeUsers}\n` +
         `👥 Total /start invocations: ${stats.totalStarts}\n` +
         `💰 Total sales: ${stats.totalSales}`,
       );
