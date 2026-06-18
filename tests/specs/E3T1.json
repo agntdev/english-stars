@@ -1,0 +1,81 @@
+[
+  {
+    "name": "/lesson starts a micro-lesson with a vocabulary question",
+    "steps": [
+      {
+        "send": { "text": "/lesson" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📚 Micro-Lesson\n\nQuestion 1/8: What does **Ephemeral** mean?",
+              "parse_mode": "Markdown",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Excessively talkative", "callback_data": "lesson:answer:0" }],
+                  [{ "text": "Overly concerned with minor details", "callback_data": "lesson:answer:1" }],
+                  [{ "text": "Lasting for a very short time", "callback_data": "lesson:answer:2" }],
+                  [{ "text": "Lacking enthusiasm or energy", "callback_data": "lesson:answer:3" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "wrong answer shows incorrect feedback and next question",
+    "steps": [
+      {
+        "send": { "text": "/lesson" },
+        "expect": [
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "lesson:answer:0" },
+        "expect": [
+          {
+            "method": "answerCallbackQuery",
+            "payload": { "text": "Wrong!" }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "❌ Wrong! **Ephemeral** means: Lasting for a very short time\n\nQuestion 2/8: What does **Ubiquitous** mean?",
+              "parse_mode": "Markdown"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "correct answer shows success feedback and next question",
+    "steps": [
+      {
+        "send": { "text": "/lesson" },
+        "expect": [
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "lesson:answer:2" },
+        "expect": [
+          {
+            "method": "answerCallbackQuery",
+            "payload": { "text": "Correct!" }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "✅ Correct!\n\nQuestion 2/8: What does **Ubiquitous** mean?",
+              "parse_mode": "Markdown"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

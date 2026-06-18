@@ -1,11 +1,18 @@
-import { createBot, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
+import { createBot, menuKeyboard, inlineKeyboard, inlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
 import { getUserDataStorage } from "./storage.js";
+import { buildLessonCards, type LessonCard } from "./vocabulary.js";
+
+export interface LessonState {
+  cards: LessonCard[];
+  index: number;
+  score: number;
+}
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
 // persistent storage (see AGENTS.md).
 export interface Session {
-  // example: step?: "awaiting_amount";
+  lesson?: LessonState;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
@@ -53,6 +60,19 @@ export function buildBot(token: string) {
     );
   });
 
+  bot.command("lesson", async (ctx) => {
+    const cards = buildLessonCards();
+    ctx.session.lesson = { cards, index: 0, score: 0 };
+    const card = cards[0];
+    const keyboard = inlineKeyboard(
+      card.options.map((opt, i) => [inlineButton(opt, `lesson:answer:${i}`)]),
+    );
+    await ctx.reply(
+      `📚 Micro-Lesson\n\nQuestion 1/${cards.length}: What does **${card.word}** mean?`,
+      { parse_mode: "Markdown", reply_markup: keyboard },
+    );
+  });
+
   bot.command("buy", async (ctx) => {
     await ctx.replyWithInvoice(
       "10 Stars",
@@ -76,7 +96,16 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:lesson", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Use /lesson to start micro-lessons and build your vocabulary step by step.");
+    const cards = buildLessonCards();
+    ctx.session.lesson = { cards, index: 0, score: 0 };
+    const card = cards[0];
+    const keyboard = inlineKeyboard(
+      card.options.map((opt, i) => [inlineButton(opt, `lesson:answer:${i}`)]),
+    );
+    await ctx.reply(
+      `📚 Micro-Lesson\n\nQuestion 1/${cards.length}: What does **${card.word}** mean?`,
+      { parse_mode: "Markdown", reply_markup: keyboard },
+    );
   });
 
   bot.callbackQuery("menu:practice", async (ctx) => {
@@ -92,6 +121,61 @@ export function buildBot(token: string) {
   bot.callbackQuery("menu:stats", async (ctx) => {
     await ctx.answerCallbackQuery();
     await ctx.reply("Use /stats to view your learning progress and activity.");
+  });
+
+  bot.on("callback_query:data", async (ctx) => {
+    if (!ctx.callbackQuery.data) return;
+
+    if (ctx.callbackQuery.data.startsWith("lesson:answer:")) {
+      const sess = ctx.session.lesson;
+      if (!sess) {
+        await ctx.answerCallbackQuery({ text: "No active lesson. Use /lesson to start." });
+        return;
+      }
+      if (sess.index >= sess.cards.length) {
+        await ctx.answerCallbackQuery({ text: "Lesson already complete." });
+        return;
+      }
+
+      const answerIdx = Number(ctx.callbackQuery.data.split(":")[2]);
+      const card = sess.cards[sess.index];
+      const chosen = card.options[answerIdx];
+      const isCorrect = chosen === card.correct;
+
+      await ctx.answerCallbackQuery({ text: isCorrect ? "Correct!" : "Wrong!" });
+
+      if (isCorrect) {
+        sess.score++;
+      }
+
+      let feedback = isCorrect
+        ? `✅ Correct!`
+        : `❌ Wrong! **${card.word}** means: ${card.correct}`;
+
+      sess.index++;
+      const remaining = sess.cards.length - sess.index;
+
+      if (remaining > 0) {
+        const next = sess.cards[sess.index];
+        const nextKeyboard = inlineKeyboard(
+          next.options.map((opt, i) => [inlineButton(opt, `lesson:answer:${i}`)]),
+        );
+        await ctx.reply(
+          `${feedback}\n\nQuestion ${sess.index + 1}/${sess.cards.length}: What does **${next.word}** mean?`,
+          { parse_mode: "Markdown", reply_markup: nextKeyboard },
+        );
+      } else {
+        const total = sess.cards.length;
+        await ctx.reply(
+          `${feedback}\n\n📚 **Lesson Complete!**\n\nScore: ${sess.score}/${total}`,
+          { parse_mode: "Markdown" },
+        );
+        delete ctx.session.lesson;
+      }
+      return;
+    }
+
+    await ctx.answerCallbackQuery({ text: "Unknown action." });
   });
 
   bot.on("message:text", async (ctx) => {
