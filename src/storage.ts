@@ -55,8 +55,11 @@ export function getLocaleStorage(): StorageAdapter<LocaleData> {
   return _localeStorage;
 }
 
+export type ReminderCadence = "daily" | "every_other_day" | "off";
+
 export interface ReminderData {
   time: string;
+  cadence: ReminderCadence;
 }
 
 let _reminderStorage: StorageAdapter<ReminderData> | undefined;
