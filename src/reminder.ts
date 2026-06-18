@@ -7,11 +7,13 @@ const REMINDER_PREFIX = "reminder";
 export interface ReminderJobData {
   userId: string;
   time: string;
+  cadence: string;
 }
 
-function buildCron(time: string): string {
+function buildCron(time: string, cadence?: string): string {
   const [hours, minutes] = time.split(":");
-  return `${minutes} ${hours} * * *`;
+  const dayPart = cadence === "every_other_day" ? "*/2" : "*";
+  return `${minutes} ${hours} ${dayPart} * *`;
 }
 
 let _queue: Queue<ReminderJobData> | undefined;
@@ -28,11 +30,11 @@ function getQueue(): Queue<ReminderJobData> | undefined {
   return _queue;
 }
 
-export async function scheduleReminder(userId: string, time: string): Promise<void> {
+export async function scheduleReminder(userId: string, time: string, cadence?: string): Promise<void> {
   const queue = getQueue();
   if (!queue) return;
   const schedulerId = `reminder:${userId}`;
-  const cron = buildCron(time);
+  const cron = buildCron(time, cadence);
   try {
     await queue.removeJobScheduler(schedulerId);
   } catch {
@@ -43,7 +45,7 @@ export async function scheduleReminder(userId: string, time: string): Promise<vo
     { pattern: cron },
     {
       name: "send-reminder",
-      data: { userId, time },
+      data: { userId, time, cadence: cadence ?? "daily" },
     },
   );
 }

@@ -1,0 +1,173 @@
+[
+  {
+    "name": "/reminders shows default cadence keyboard",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30).",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Daily", "callback_data": "reminders:cadence:daily" }],
+                  [{ "text": "Every other day", "callback_data": "reminders:cadence:every_other_day" }],
+                  [{ "text": "Off", "callback_data": "reminders:cadence:off" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Select Daily cadence and set time via text input",
+    "steps": [
+      {
+        "send": { "callback": "reminders:cadence:daily" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 09:00\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "14:30" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Reminder time set to 14:30."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Select Every-other-day cadence and set time",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 14:30\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30).",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Daily", "callback_data": "reminders:cadence:daily" }],
+                  [{ "text": "Every other day", "callback_data": "reminders:cadence:every_other_day" }],
+                  [{ "text": "Off", "callback_data": "reminders:cadence:off" }]
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "reminders:cadence:every_other_day" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your every-other-day reminder time: 14:30\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      },
+      {
+        "send": { "text": "08:00" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Reminder time set to 08:00 (every-other-day)."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Turn off reminders via Off inline button",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your every-other-day reminder time: 08:00\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30).",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Daily", "callback_data": "reminders:cadence:daily" }],
+                  [{ "text": "Every other day", "callback_data": "reminders:cadence:every_other_day" }],
+                  [{ "text": "Off", "callback_data": "reminders:cadence:off" }]
+                ]
+              }
+            }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "reminders:cadence:off" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Daily reminders turned off. Send /reminders to schedule again."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/reminders shows turned off state with re-enable keyboard",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Reminders are currently turned off.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "Daily", "callback_data": "reminders:cadence:daily" }],
+                  [{ "text": "Every other day", "callback_data": "reminders:cadence:every_other_day" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Re-enable from off state by selecting Daily",
+    "steps": [
+      {
+        "send": { "callback": "reminders:cadence:daily" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Your daily reminder time: 08:00\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

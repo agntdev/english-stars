@@ -9,6 +9,7 @@ import { generateTypeWordQuiz, checkTypeWordAnswer } from "./quiz.js";
 export interface Session {
   lessonPage?: number;
   awaitingReminderTime?: boolean;
+  reminderCadence?: "daily" | "every_other_day";
   quizQuestion?: number;
   quizScore?: number;
   typeWordQuestion?: number;
@@ -213,11 +214,34 @@ export function buildBot(token: string) {
     const userId = String(ctx.from.id);
     const reminderStorage = getReminderStorage();
     const current = await reminderStorage.read(userId);
+
+    if (current?.cadence === "off") {
+      await ctx.reply(
+        "Reminders are currently turned off.",
+        {
+          reply_markup: inlineKeyboard([
+            [inlineButton("Daily", "reminders:cadence:daily")],
+            [inlineButton("Every other day", "reminders:cadence:every_other_day")],
+          ]),
+        },
+      );
+      return;
+    }
+
     const currentTime = current?.time ?? "09:00";
+    const currentCadence = current?.cadence ?? "daily";
     const defaultNote = current ? "" : " (default)";
+    const cadenceLabel = currentCadence === "every_other_day" ? "every-other-day" : "daily";
     ctx.session.awaitingReminderTime = true;
     await ctx.reply(
-      `Your daily reminder time: ${currentTime}${defaultNote}\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30).`,
+      `Your ${cadenceLabel} reminder time: ${currentTime}${defaultNote}\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30).`,
+      {
+        reply_markup: inlineKeyboard([
+          [inlineButton("Daily", "reminders:cadence:daily")],
+          [inlineButton("Every other day", "reminders:cadence:every_other_day")],
+          [inlineButton("Off", "reminders:cadence:off")],
+        ]),
+      },
     );
   });
 
@@ -329,6 +353,34 @@ export function buildBot(token: string) {
     await ctx.reply("Use /reminders to set up daily practice reminders at your preferred time. Use /reminderoff to disable them.");
   });
 
+  bot.callbackQuery(/^reminders:cadence:(daily|every_other_day|off)$/, async (ctx) => {
+    const cadence = ctx.match[1];
+    await ctx.answerCallbackQuery();
+    if (!ctx.from) return;
+    const userId = String(ctx.from.id);
+    const reminderStorage = getReminderStorage();
+
+    if (cadence === "off") {
+      const current = await reminderStorage.read(userId);
+      if (current) {
+        await cancelReminder(userId);
+      }
+      await reminderStorage.write(userId, { time: current?.time ?? "09:00", cadence: "off" });
+      ctx.session.awaitingReminderTime = false;
+      await ctx.reply("Daily reminders turned off. Send /reminders to schedule again.");
+      return;
+    }
+
+    ctx.session.reminderCadence = cadence as "daily" | "every_other_day";
+    ctx.session.awaitingReminderTime = true;
+    const current = await reminderStorage.read(userId);
+    const currentTime = current?.time ?? "09:00";
+    const cadenceLabel = cadence === "every_other_day" ? "every-other-day" : "daily";
+    await ctx.reply(
+      `Your ${cadenceLabel} reminder time: ${currentTime}\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30).`,
+    );
+  });
+
   bot.callbackQuery("menu:stats", async (ctx) => {
     await ctx.answerCallbackQuery();
     await ctx.reply("Use /stats to view your learning progress and activity.");
@@ -364,10 +416,13 @@ export function buildBot(token: string) {
       if (match) {
         const time = match[0];
         const userId = String(ctx.from.id);
+        const cadence = ctx.session.reminderCadence ?? "daily";
+        ctx.session.reminderCadence = undefined;
         const reminderStorage = getReminderStorage();
-        await reminderStorage.write(userId, { time });
-        await scheduleReminder(userId, time);
-        await ctx.reply(`Reminder time set to ${time}.`);
+        await reminderStorage.write(userId, { time, cadence });
+        await scheduleReminder(userId, time, cadence);
+        const cadenceLabel = cadence === "every_other_day" ? " (every-other-day)" : "";
+        await ctx.reply(`Reminder time set to ${time}${cadenceLabel}.`);
       } else {
         await ctx.reply(`"${text}" is not a valid 24-hour time (HH:MM). Send /reminders to try again.`);
       }
