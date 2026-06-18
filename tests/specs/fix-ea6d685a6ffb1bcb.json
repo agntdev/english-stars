@@ -1,0 +1,44 @@
+[
+  {
+    "name": "/reminders syncs session reminderCadence with persistent storage, avoiding stale values from prior button clicks",
+    "steps": [
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)." }
+          }
+        ]
+      },
+      {
+        "send": { "callback": "reminders:cadence:every_other_day" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your every-other-day reminder time: 09:00\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "/reminders" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your daily reminder time: 09:00 (default)\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30)." }
+          }
+        ]
+      },
+      {
+        "send": { "text": "15:30" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Reminder time set to 15:30." }
+          }
+        ]
+      }
+    ]
+  }
+]
