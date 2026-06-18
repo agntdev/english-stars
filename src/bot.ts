@@ -1,4 +1,4 @@
-import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineKeyboardMarkup } from "./toolkit/index.js";
+import { createBot, inlineButton, inlineKeyboard, menuKeyboard, urlButton, type InlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
 import { getLocaleStorage, getUserDataStorage } from "./storage.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
@@ -39,28 +39,65 @@ function welcomeText(): string {
   return "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:";
 }
 
-const MICRO_LESSONS: readonly string[] = [
-  "Practice daily to improve quickly.",
-  "Small steps lead to mastery.",
-  "Review past lessons every week.",
-  "Consistency beats intensity every time.",
+interface WordCard {
+  word: string;
+  partOfSpeech: string;
+  definition: string;
+  example: string;
+}
+
+const WORD_DECK: readonly WordCard[] = [
+  { word: "Ephemeral", partOfSpeech: "adjective", definition: "Lasting for a very short time.", example: "The beauty of cherry blossoms is ephemeral." },
+  { word: "Ubiquitous", partOfSpeech: "adjective", definition: "Present, appearing, or found everywhere.", example: "Smartphones have become ubiquitous in modern life." },
+  { word: "Pragmatic", partOfSpeech: "adjective", definition: "Dealing with things sensibly and realistically.", example: "We need a pragmatic approach to this problem." },
+  { word: "Eloquent", partOfSpeech: "adjective", definition: "Fluent or persuasive in speaking or writing.", example: "She gave an eloquent speech about climate change." },
+  { word: "Resilient", partOfSpeech: "adjective", definition: "Able to withstand or recover quickly from difficult conditions.", example: "Children are remarkably resilient." },
+  { word: "Ambiguous", partOfSpeech: "adjective", definition: "Open to more than one interpretation.", example: "His answer was deliberately ambiguous." },
+  { word: "Meticulous", partOfSpeech: "adjective", definition: "Showing great attention to detail.", example: "She is a meticulous researcher." },
+  { word: "Inevitable", partOfSpeech: "adjective", definition: "Certain to happen; unavoidable.", example: "Change is inevitable in life." },
+  { word: "Benevolent", partOfSpeech: "adjective", definition: "Well-meaning and kindly.", example: "The benevolent donor funded the new library." },
+  { word: "Candid", partOfSpeech: "adjective", definition: "Truthful and straightforward; frank.", example: "I appreciate your candid feedback." },
+  { word: "Diligent", partOfSpeech: "adjective", definition: "Having or showing care in one's work.", example: "A diligent student prepares for every class." },
+  { word: "Verbose", partOfSpeech: "adjective", definition: "Using more words than needed.", example: "His verbose explanation confused everyone." },
+  { word: "Tenacious", partOfSpeech: "adjective", definition: "Tending to keep a firm hold of something.", example: "The tenacious reporter pursued the story." },
+  { word: "Mundane", partOfSpeech: "adjective", definition: "Lacking interest or excitement; dull.", example: "She wanted to escape the mundane routine." },
+  { word: "Amiable", partOfSpeech: "adjective", definition: "Having a friendly and pleasant manner.", example: "The amiable host made everyone feel welcome." },
+  { word: "Skeptical", partOfSpeech: "adjective", definition: "Not easily convinced; having doubts.", example: "I am skeptical about that claim." },
+  { word: "Prolific", partOfSpeech: "adjective", definition: "Producing much fruit or many works.", example: "She was a prolific writer of short stories." },
+  { word: "Conspicuous", partOfSpeech: "adjective", definition: "Standing out so as to be clearly visible.", example: "His absence was conspicuous." },
+  { word: "Gregarious", partOfSpeech: "adjective", definition: "Fond of company; sociable.", example: "He was a gregarious person who loved parties." },
+  { word: "Voracious", partOfSpeech: "adjective", definition: "Wanting or devouring great quantities.", example: "She had a voracious appetite for books." },
 ];
 
 function lessonMessage(page: number): string {
-  const lesson = MICRO_LESSONS[page];
-  return `📖 Lesson ${page + 1} of ${MICRO_LESSONS.length}\n\n${lesson}`;
+  const card = WORD_DECK[page];
+  const lines = [
+    `📖 Word ${page + 1} of ${WORD_DECK.length}`,
+    "",
+    `${card.word} (${card.partOfSpeech})`,
+    `📘 ${card.definition}`,
+    `💬 "${card.example}"`,
+  ];
+  return lines.join("\n");
 }
 
 function lessonKeyboard(page: number): InlineKeyboardMarkup {
-  const total = MICRO_LESSONS.length;
-  const row: Array<{ text: string; data: string }> = [];
+  const total = WORD_DECK.length;
+  const card = WORD_DECK[page];
+  const encodedWord = encodeURIComponent(card.word);
+  const rows: InlineButton[][] = [];
+  rows.push([urlButton("🔈 Play audio", `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodedWord}`)]);
+  const navRow: InlineButton[] = [];
   if (page > 0) {
-    row.push({ text: "← Prev", data: `lesson:prev:${page - 1}` });
+    navRow.push(inlineButton("← Prev", `lesson:prev:${page - 1}`));
   }
   if (page < total - 1) {
-    row.push({ text: "Next →", data: `lesson:next:${page + 1}` });
+    navRow.push(inlineButton("Next →", `lesson:next:${page + 1}`));
   }
-  return menuKeyboard(row, row.length);
+  if (navRow.length > 0) {
+    rows.push(navRow);
+  }
+  return inlineKeyboard(rows);
 }
 
 /**
@@ -140,7 +177,7 @@ export function buildBot(token: string) {
   bot.callbackQuery(/^lesson:(next|prev):(\d+)$/, async (ctx) => {
     await ctx.answerCallbackQuery();
     const page = parseInt(ctx.match[2], 10);
-    if (isNaN(page) || page < 0 || page >= MICRO_LESSONS.length) return;
+    if (isNaN(page) || page < 0 || page >= WORD_DECK.length) return;
     ctx.session.lessonPage = page;
     await ctx.editMessageText(lessonMessage(page), { reply_markup: lessonKeyboard(page) });
   });

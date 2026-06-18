@@ -1,0 +1,119 @@
+[
+  {
+    "name": "/lesson command shows word card 1 of 20 with Play audio button",
+    "steps": [
+      {
+        "send": { "text": "/lesson" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📖 Word 1 of 20\n\nEphemeral (adjective)\n📘 Lasting for a very short time.\n💬 \"The beauty of cherry blossoms is ephemeral.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "🔈 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Ephemeral" }],
+                  [{ "text": "Next →", "callback_data": "lesson:next:1" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Next navigates to word 2 with both prev/next and Play audio button",
+    "steps": [
+      {
+        "send": { "callback": "lesson:next:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📖 Word 2 of 20\n\nUbiquitous (adjective)\n📘 Present, appearing, or found everywhere.\n💬 \"Smartphones have become ubiquitous in modern life.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "🔈 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Ubiquitous" }],
+                  [
+                    { "text": "← Prev", "callback_data": "lesson:prev:0" },
+                    { "text": "Next →", "callback_data": "lesson:next:2" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Prev navigates back to word 1",
+    "steps": [
+      {
+        "send": { "callback": "lesson:prev:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📖 Word 1 of 20\n\nEphemeral (adjective)\n📘 Lasting for a very short time.\n💬 \"The beauty of cherry blossoms is ephemeral.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "🔈 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Ephemeral" }],
+                  [{ "text": "Next →", "callback_data": "lesson:next:1" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Last word (20) shows only Play audio and Prev button",
+    "steps": [
+      {
+        "send": { "callback": "lesson:next:19" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📖 Word 20 of 20\n\nVoracious (adjective)\n📘 Wanting or devouring great quantities.\n💬 \"She had a voracious appetite for books.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "🔈 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Voracious" }],
+                  [{ "text": "← Prev", "callback_data": "lesson:prev:18" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "menu:lesson callback opens word 1",
+    "steps": [
+      {
+        "send": { "callback": "menu:lesson" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📖 Word 1 of 20\n\nEphemeral (adjective)\n📘 Lasting for a very short time.\n💬 \"The beauty of cherry blossoms is ephemeral.\"",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [{ "text": "🔈 Play audio", "url": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=Ephemeral" }],
+                  [{ "text": "Next →", "callback_data": "lesson:next:1" }]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
