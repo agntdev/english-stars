@@ -1,0 +1,68 @@
+[
+  {
+    "name": "successful payment unlocks user and credits stars",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": { "id": 10, "type": "private" },
+              "from": { "id": 10, "is_bot": false, "first_name": "Test" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "charge-1",
+                "provider_payment_charge_id": "provider-1"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 10 stars." }
+          },
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Your account is now unlocked! 🎉" }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "second payment credits stars but does not re-send unlock",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "message": {
+              "message_id": 1,
+              "date": 0,
+              "chat": { "id": 10, "type": "private" },
+              "from": { "id": 10, "is_bot": false, "first_name": "Test" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "charge-2",
+                "provider_payment_charge_id": "provider-2"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "Payment received! You now have 20 stars." }
+          }
+        ]
+      }
+    ]
+  }
+]
