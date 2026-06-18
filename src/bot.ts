@@ -24,16 +24,32 @@ function welcomeText(): string {
   return "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:";
 }
 
+function parseAdminChatId(raw?: string): number | undefined {
+  if (!raw) return undefined;
+  const id = Number(raw);
+  return Number.isFinite(id) && id > 0 ? id : undefined;
+}
+
 /**
  * buildBot — assembles the bot and registers every handler, but does NOT start
  * it. Shared by the runtime entry (src/index.ts) and the Tests-gate harness
  * (src/harness-entry.ts) so both exercise the exact same bot. Add new commands
  * and flows here.
+ *
+ * @param adminChatId — Telegram chat id (usually numeric) where critical error
+ *   notifications are sent. Read from TELEGRAM_ADMIN_CHAT_ID env at the call site.
  */
-export function buildBot(token: string) {
+export function buildBot(token: string, adminChatId?: string) {
   const bot = createBot<Session>(token, {
     initial: () => ({}),
   });
+
+  const adminId = parseAdminChatId(adminChatId);
+
+  function notifyAdmin(text: string): void {
+    if (adminId === undefined) return;
+    bot.api.sendMessage(adminId, text).catch(() => {});
+  }
 
   bot.command("start", async (ctx) => {
     await ctx.reply(welcomeText(), { reply_markup: MAIN_MENU_KEYBOARD });
@@ -105,7 +121,36 @@ export function buildBot(token: string) {
     await ctx.reply(`You said: ${text}`);
   });
 
+  bot.on("pre_checkout_query", async (ctx) => {
+    const payload = ctx.preCheckoutQuery.invoice_payload;
+    if (payload !== "buy_stars_10") {
+      const errorMsg = `Unknown invoice payload: ${payload}`;
+      notifyAdmin(`⚠️ Pre-checkout rejected: ${errorMsg}`);
+      try {
+        await ctx.answerPreCheckoutQuery(false, "Unknown payment type.");
+      } catch { /* best-effort */ }
+      return;
+    }
+    try {
+      await ctx.answerPreCheckoutQuery(true);
+    } catch (e) {
+      notifyAdmin(`⚠️ Failed to answer pre_checkout_query: ${String(e)}`);
+      try {
+        await ctx.answerPreCheckoutQuery(false, "Internal error processing payment.");
+      } catch { /* best-effort */ }
+    }
+  });
+
+  bot.on("message:successful_payment", async (ctx) => {
+    const payment = ctx.message.successful_payment;
+    await ctx.reply("✅ Payment successful! Your 10 Stars have been added to your account.");
+    notifyAdmin(
+      `✅ Payment received: ${payment.total_amount} ${payment.currency} from user ${ctx.from?.id} (payload: ${payment.invoice_payload})`,
+    );
+  });
+
   bot.catch(async (err) => {
+    notifyAdmin(`⚠️ Critical bot error: ${String(err.error)}`);
     try {
       await err.ctx.reply("Something went wrong. Please try again later.");
     } catch (_e) {

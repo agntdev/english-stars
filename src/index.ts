@@ -7,5 +7,5 @@ if (!token) {
   process.exit(1);
 }
 
-const bot = buildBot(token);
+const bot = buildBot(token, process.env.TELEGRAM_ADMIN_CHAT_ID);
 bot.start();

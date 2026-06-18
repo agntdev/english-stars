@@ -1,0 +1,97 @@
+[
+  {
+    "name": "pre_checkout_query with valid payload is approved",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 1,
+            "pre_checkout_query": {
+              "id": "pq-valid",
+              "from": { "id": 1, "is_bot": false, "first_name": "Test" },
+              "currency": "XTR",
+              "total_amount": 10,
+              "invoice_payload": "buy_stars_10"
+            }
+          }
+        },
+        "expect": [
+          { "method": "answerPreCheckoutQuery", "payload": { "ok": true } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "pre_checkout_query with unknown payload notifies admin and rejects",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 2,
+            "pre_checkout_query": {
+              "id": "pq-bad",
+              "from": { "id": 1, "is_bot": false, "first_name": "Test" },
+              "currency": "XTR",
+              "total_amount": 100,
+              "invoice_payload": "unknown_stars_999"
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "chat_id": 123456,
+              "text": "⚠️ Pre-checkout rejected: Unknown invoice payload: unknown_stars_999"
+            }
+          },
+          {
+            "method": "answerPreCheckoutQuery",
+            "payload": {
+              "ok": false,
+              "error_message": "Unknown payment type."
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "successful payment notifies admin and confirms to user",
+    "steps": [
+      {
+        "send": {
+          "update": {
+            "update_id": 3,
+            "message": {
+              "message_id": 100,
+              "date": 0,
+              "from": { "id": 1, "is_bot": false, "first_name": "Test" },
+              "chat": { "id": 1, "type": "private", "first_name": "Test" },
+              "successful_payment": {
+                "currency": "XTR",
+                "total_amount": 10,
+                "invoice_payload": "buy_stars_10",
+                "telegram_payment_charge_id": "charge_abc",
+                "provider_payment_charge_id": "prov_xyz"
+              }
+            }
+          }
+        },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": { "text": "✅ Payment successful! Your 10 Stars have been added to your account." }
+          },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "chat_id": 123456,
+              "text": "✅ Payment received: 10 XTR from user 1 (payload: buy_stars_10)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
