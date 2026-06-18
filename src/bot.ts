@@ -232,6 +232,7 @@ export function buildBot(token: string) {
     const currentCadence = current?.cadence ?? "daily";
     const defaultNote = current ? "" : " (default)";
     const cadenceLabel = currentCadence === "every_other_day" ? "every-other-day" : "daily";
+    ctx.session.reminderCadence = currentCadence as "daily" | "every_other_day";
     ctx.session.awaitingReminderTime = true;
     await ctx.reply(
       `Your ${cadenceLabel} reminder time: ${currentTime}${defaultNote}\n\nSend your preferred time in 24-hour HH:MM format (e.g., 14:30).`,
