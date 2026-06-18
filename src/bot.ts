@@ -1,5 +1,5 @@
 import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineButton, type InlineKeyboardMarkup } from "./toolkit/index.js";
-import { getLocaleStorage, getReminderStorage, getStatsStorage, getUserDataStorage, incrementStat } from "./storage.js";
+import { getLocaleStorage, getReminderStorage, getStatsStorage, getUserDataStorage, incrementStat, saveQuizScore } from "./storage.js";
 import { scheduleReminder, cancelReminder } from "./reminder.js";
 import { generateTypeWordQuiz, checkTypeWordAnswer } from "./quiz.js";
 
@@ -311,6 +311,8 @@ export function buildBot(token: string) {
     } else {
       const score = ctx.session.quizScore ?? 0;
       const total = QUIZ_QUESTIONS.length;
+      const userId = ctx.from ? String(ctx.from.id) : "unknown";
+      await saveQuizScore(userId, "practice", score, total);
       await ctx.reply(`🎉 Quiz complete! You scored ${score}/${total}.`);
       ctx.session.quizQuestion = undefined;
       ctx.session.quizScore = undefined;
@@ -397,6 +399,8 @@ export function buildBot(token: string) {
       } else {
         const score = ctx.session.typeWordScore ?? 0;
         const total = questions.length;
+        const userId = ctx.from ? String(ctx.from.id) : "unknown";
+        await saveQuizScore(userId, "typeword", score, total);
         await ctx.reply(`🎉 Type-the-word quiz complete! You scored ${score}/${total}.`);
         ctx.session.typeWordQuestion = undefined;
         ctx.session.typeWordScore = undefined;
