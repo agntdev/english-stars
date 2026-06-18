@@ -5,7 +5,7 @@ import { getUserDataStorage } from "./storage.js";
 // bot grows. Durable domain data must NOT live here — use the toolkit's
 // persistent storage (see AGENTS.md).
 export interface Session {
-  // example: step?: "awaiting_amount";
+  lessonPage?: number;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
@@ -23,6 +23,30 @@ const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "r
 
 function welcomeText(): string {
   return "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:";
+}
+
+const MICRO_LESSONS: readonly string[] = [
+  "Practice daily to improve quickly.",
+  "Small steps lead to mastery.",
+  "Review past lessons every week.",
+  "Consistency beats intensity every time.",
+];
+
+function lessonMessage(page: number): string {
+  const lesson = MICRO_LESSONS[page];
+  return `📖 Lesson ${page + 1} of ${MICRO_LESSONS.length}\n\n${lesson}`;
+}
+
+function lessonKeyboard(page: number): InlineKeyboardMarkup {
+  const total = MICRO_LESSONS.length;
+  const row: Array<{ text: string; data: string }> = [];
+  if (page > 0) {
+    row.push({ text: "← Prev", data: `lesson:prev:${page - 1}` });
+  }
+  if (page < total - 1) {
+    row.push({ text: "Next →", data: `lesson:next:${page + 1}` });
+  }
+  return menuKeyboard(row, row.length);
 }
 
 /**
@@ -53,6 +77,11 @@ export function buildBot(token: string) {
     );
   });
 
+  bot.command("lesson", async (ctx) => {
+    ctx.session.lessonPage = 0;
+    await ctx.reply(lessonMessage(0), { reply_markup: lessonKeyboard(0) });
+  });
+
   bot.command("buy", async (ctx) => {
     await ctx.replyWithInvoice(
       "10 Stars",
@@ -76,7 +105,16 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:lesson", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Use /lesson to start micro-lessons and build your vocabulary step by step.");
+    ctx.session.lessonPage = 0;
+    await ctx.reply(lessonMessage(0), { reply_markup: lessonKeyboard(0) });
+  });
+
+  bot.callbackQuery(/^lesson:(next|prev):(\d+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const page = parseInt(ctx.match[2], 10);
+    if (isNaN(page) || page < 0 || page >= MICRO_LESSONS.length) return;
+    ctx.session.lessonPage = page;
+    await ctx.editMessageText(lessonMessage(page), { reply_markup: lessonKeyboard(page) });
   });
 
   bot.callbackQuery("menu:practice", async (ctx) => {
