@@ -1,0 +1,34 @@
+[
+  {
+    "name": "/help lists available commands",
+    "steps": [
+      {
+        "send": { "text": "/help" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Practice quizzes\n/reminders — Daily reminders\n/stats — View your stats\n/help — Show this help"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "unknown command replies with friendly fallback",
+    "steps": [
+      {
+        "send": { "text": "/foobar" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "Unknown command. Use /help to see available commands."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

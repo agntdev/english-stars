@@ -18,6 +18,8 @@ const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
 
 const MAIN_MENU_KEYBOARD: InlineKeyboardMarkup = menuKeyboard(MAIN_MENU);
 
+const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "stats"]);
+
 function welcomeText(): string {
   return "Welcome to AGNTDEV! 🎉\n\nI'm your learning companion. Choose an option below to get started:";
 }
@@ -35,6 +37,19 @@ export function buildBot(token: string) {
 
   bot.command("start", async (ctx) => {
     await ctx.reply(welcomeText(), { reply_markup: MAIN_MENU_KEYBOARD });
+  });
+
+  bot.command("help", async (ctx) => {
+    await ctx.reply(
+      "Available commands:\n" +
+      "/start — Main menu\n" +
+      "/buy — Buy Stars\n" +
+      "/lesson — Micro-lessons\n" +
+      "/practice — Practice quizzes\n" +
+      "/reminders — Daily reminders\n" +
+      "/stats — View your stats\n" +
+      "/help — Show this help"
+    );
   });
 
   bot.callbackQuery("menu:help", async (ctx) => {
@@ -69,8 +84,22 @@ export function buildBot(token: string) {
 
   bot.on("message:text", async (ctx) => {
     const text = ctx.message.text;
-    if (text.startsWith("/")) return;
+    if (text.startsWith("/")) {
+      const cmd = text.split(" ")[0].slice(1).split("@")[0].toLowerCase();
+      if (!KNOWN_COMMANDS.has(cmd)) {
+        await ctx.reply("Unknown command. Use /help to see available commands.");
+      }
+      return;
+    }
     await ctx.reply(`You said: ${text}`);
+  });
+
+  bot.catch(async (err) => {
+    try {
+      await err.ctx.reply("Something went wrong. Please try again later.");
+    } catch (_e) {
+      // Best-effort reply — createBot's built-in catch already logs the error.
+    }
   });
 
   return bot;
