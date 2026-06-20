@@ -9,6 +9,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@google-cloud/text-to-speech": "^6.4.1",
     "bullmq": "^5.79.0",
     "grammy": "^1.30.0",
     "ioredis": "^5.4.1",
