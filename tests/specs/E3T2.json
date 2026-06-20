@@ -1,0 +1,119 @@
+[
+  {
+    "name": "/wordcard command shows first word card with Play Audio button",
+    "steps": [
+      {
+        "send": { "text": "/wordcard" },
+        "expect": [
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "📖 Word Card 1 of 5\n\nWord: ubiquitous\nPart of speech: adjective\nDefinition: Present, appearing, or found everywhere.\nExample: Smartphones have become ubiquitous in modern society.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "🔊 Play Audio", "callback_data": "wordcard:play:0" },
+                    { "text": "Next →", "callback_data": "wordcard:next:1" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Next button navigates to second word card with all three buttons",
+    "steps": [
+      {
+        "send": { "callback": "wordcard:next:1" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📖 Word Card 2 of 5\n\nWord: persevere\nPart of speech: verb\nDefinition: To continue in a course of action despite difficulty or opposition.\nExample: She persevered with her studies and eventually passed the exam.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "← Prev", "callback_data": "wordcard:prev:0" },
+                    { "text": "🔊 Play Audio", "callback_data": "wordcard:play:1" },
+                    { "text": "Next →", "callback_data": "wordcard:next:2" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Prev button returns to first word card",
+    "steps": [
+      {
+        "send": { "callback": "wordcard:prev:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📖 Word Card 1 of 5\n\nWord: ubiquitous\nPart of speech: adjective\nDefinition: Present, appearing, or found everywhere.\nExample: Smartphones have become ubiquitous in modern society.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "🔊 Play Audio", "callback_data": "wordcard:play:0" },
+                    { "text": "Next →", "callback_data": "wordcard:next:1" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Last word card shows only Prev and Play Audio buttons",
+    "steps": [
+      {
+        "send": { "callback": "wordcard:next:4" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "editMessageText",
+            "payload": {
+              "text": "📖 Word Card 5 of 5\n\nWord: meticulous\nPart of speech: adjective\nDefinition: Showing great attention to detail; very careful and precise.\nExample: The meticulous craftsman spent hours perfecting every joint.",
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    { "text": "← Prev", "callback_data": "wordcard:prev:3" },
+                    { "text": "🔊 Play Audio", "callback_data": "wordcard:play:4" }
+                  ]
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Play Audio button replies with word pronunciation",
+    "steps": [
+      {
+        "send": { "callback": "wordcard:play:0" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          {
+            "method": "sendMessage",
+            "payload": {
+              "text": "“ubiquitous” — Present, appearing, or found everywhere."
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
