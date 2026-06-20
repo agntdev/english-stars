@@ -2,6 +2,7 @@ import { createBot, inlineButton, inlineKeyboard, menuKeyboard, type InlineButto
 import { getLocaleStorage, getReminderStorage, getStatsStorage, getUserDataStorage, incrementStat, recordActiveUser, saveQuizScore } from "./storage.js";
 import { scheduleReminder, cancelReminder } from "./reminder.js";
 import { generateTypeWordQuiz, checkTypeWordAnswer } from "./quiz.js";
+import { WORD_CARDS, wordCardMessage, wordCardKeyboard } from "./wordcard.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
@@ -16,6 +17,7 @@ export interface Session {
   typeWordScore?: number;
   adminAction?: "grant" | "refund";
   adminTargetUserId?: string;
+  wordCardPage?: number;
 }
 
 const MAIN_MENU: ReadonlyArray<{ text: string; data: string }> = [
@@ -43,7 +45,7 @@ const LOCALE_MENU_KEYBOARD: InlineKeyboardMarkup = inlineKeyboard(
   LOCALES.map((loc) => [inlineButton(loc.name, `locale:set:${loc.code}`)]),
 );
 
-const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale", "typeword", "admin"]);
+const KNOWN_COMMANDS = new Set(["start", "help", "buy", "lesson", "practice", "reminders", "reminderoff", "stats", "locale", "typeword", "admin", "wordcard"]);
 
 async function notifyAdmin(bot: ReturnType<typeof createBot<Session>>, message: string) {
   const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
@@ -157,6 +159,7 @@ export function buildBot(token: string) {
       "/lesson — Micro-lessons\n" +
       "/practice — Multiple-choice quizzes\n" +
       "/typeword — Type-the-word quizzes\n" +
+      "/wordcard — Browse word cards\n" +
       "/reminders — Daily reminders\n" +
       "/reminderoff — Turn off reminders\n" +
       "/stats — View your stats\n" +
@@ -186,6 +189,11 @@ export function buildBot(token: string) {
     await ctx.reply(
       `⌨️ Type the Word — Question 1 of ${questions.length}\n\n${q.text}\n\nType your answer below:`,
     );
+  });
+
+  bot.command("wordcard", async (ctx) => {
+    ctx.session.wordCardPage = 0;
+    await ctx.reply(wordCardMessage(0), { reply_markup: wordCardKeyboard(0) });
   });
 
   bot.command("buy", async (ctx) => {
@@ -327,7 +335,7 @@ export function buildBot(token: string) {
 
   bot.callbackQuery("menu:help", async (ctx) => {
     await ctx.answerCallbackQuery();
-    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Multiple-choice quizzes\n/typeword — Type-the-word quizzes\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
+    await ctx.reply("Available commands:\n/start — Main menu\n/buy — Buy Stars\n/lesson — Micro-lessons\n/practice — Multiple-choice quizzes\n/typeword — Type-the-word quizzes\n/wordcard — Browse word cards\n/reminders — Daily reminders\n/reminderoff — Turn off reminders\n/stats — View your stats\n/locale — Set language\n/help — Show this help");
   });
 
   bot.callbackQuery("menu:buy", async (ctx) => {
@@ -347,6 +355,24 @@ export function buildBot(token: string) {
     if (isNaN(page) || page < 0 || page >= MICRO_LESSONS.length) return;
     ctx.session.lessonPage = page;
     await ctx.editMessageText(lessonMessage(page), { reply_markup: lessonKeyboard(page) });
+  });
+
+  bot.callbackQuery(/^wordcard:(next|prev):(\d+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const page = parseInt(ctx.match[2], 10);
+    if (isNaN(page) || page < 0 || page >= WORD_CARDS.length) return;
+    ctx.session.wordCardPage = page;
+    await ctx.editMessageText(wordCardMessage(page), { reply_markup: wordCardKeyboard(page) });
+  });
+
+  bot.callbackQuery(/^wordcard:play:(\d+)$/, async (ctx) => {
+    await ctx.answerCallbackQuery();
+    const page = parseInt(ctx.match[1], 10);
+    if (isNaN(page) || page < 0 || page >= WORD_CARDS.length) return;
+    const card = WORD_CARDS[page];
+    if (card.word) {
+      await ctx.reply(`“${card.word}” — ${card.definition}`);
+    }
   });
 
   bot.callbackQuery(/^practice:answer:(\d+):(\d+)$/, async (ctx) => {
